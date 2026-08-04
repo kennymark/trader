@@ -7,7 +7,7 @@ import cron from "node-cron";
 import { auth } from "./auth.js";
 import { db } from "./db/index.js";
 import { notificationChannels, telegramLinkTokens } from "./db/schema.js";
-import { apiRoutes } from "./routes/api.js";
+import { apiRoutes, publicMarketRoutes } from "./routes/api.js";
 import { runAlertCycle } from "./worker/alerts.js";
 
 const webOrigin = process.env.WEB_ORIGIN || "http://localhost:5173";
@@ -88,6 +88,7 @@ app.post("/api/telegram/webhook", async (c) => {
   return c.json({ ok: true });
 });
 
+app.route("/api", publicMarketRoutes);
 app.route("/api", apiRoutes);
 
 serve({ fetch: app.fetch, port }, () => {

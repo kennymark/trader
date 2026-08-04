@@ -26,6 +26,60 @@ function id() {
   return crypto.randomUUID();
 }
 
+/** Public market data — no login required */
+export const publicMarketRoutes = new Hono();
+
+publicMarketRoutes.get("/quotes", async (c) => {
+  const symbols = (c.req.query("symbols") || "")
+    .split(",")
+    .map((s) => s.trim().toUpperCase())
+    .filter(Boolean);
+  if (symbols.length === 0) return c.json([]);
+  try {
+    const quotes = await getQuotes(symbols);
+    return c.json(quotes);
+  } catch (err) {
+    console.error(err);
+    return c.json({ error: "Failed to fetch quotes" }, 502);
+  }
+});
+
+publicMarketRoutes.get("/history/:symbol", async (c) => {
+  const symbol = c.req.param("symbol").toUpperCase();
+  const range = historyRangeSchema.parse(c.req.query("range") || "1y");
+  try {
+    const bars = await getHistory(symbol, range);
+    return c.json({ symbol, range, bars });
+  } catch (err) {
+    console.error(err);
+    return c.json({ error: "Failed to fetch history" }, 502);
+  }
+});
+
+publicMarketRoutes.get("/analytics/:symbol", async (c) => {
+  const symbol = c.req.param("symbol").toUpperCase();
+  const params = analyticsQuerySchema.parse({
+    range: c.req.query("range") || "1y",
+    amount: c.req.query("amount") || "1000",
+    dipPct: c.req.query("dipPct") || "10",
+  });
+  try {
+    const bars = await getHistory(symbol, params.range);
+    const analytics = computeAnalytics(
+      symbol,
+      params.range,
+      bars,
+      params.amount,
+      params.dipPct,
+    );
+    return c.json(analytics);
+  } catch (err) {
+    console.error(err);
+    return c.json({ error: "Failed to compute analytics" }, 502);
+  }
+});
+
+/** Authenticated app routes */
 export const apiRoutes = new Hono<AppEnv>();
 
 apiRoutes.use("*", requireAuth);
@@ -69,6 +123,29 @@ apiRoutes.post("/watchlist", async (c) => {
   return c.json({ ...item, createdAt: new Date().toISOString() }, 201);
 });
 
+apiRoutes.post("/watchlist/sync", async (c) => {
+  const user = c.get("user");
+  const body = await c.req.json<{ symbols?: string[] }>();
+  const symbols = [...new Set((body.symbols || []).map((s) => s.trim().toUpperCase()).filter(Boolean))];
+  const saved: string[] = [];
+  for (const symbol of symbols) {
+    const displayName = await resolveDisplayName(symbol);
+    try {
+      await db.insert(watchlistItems).values({
+        id: id(),
+        userId: user.id,
+        symbol,
+        displayName,
+        sortOrder: 0,
+      });
+      saved.push(symbol);
+    } catch {
+      // already exists
+    }
+  }
+  return c.json({ saved });
+});
+
 apiRoutes.delete("/watchlist/:id", async (c) => {
   const user = c.get("user");
   const itemId = c.req.param("id");
@@ -76,57 +153,6 @@ apiRoutes.delete("/watchlist/:id", async (c) => {
     .delete(watchlistItems)
     .where(and(eq(watchlistItems.id, itemId), eq(watchlistItems.userId, user.id)));
   return c.json({ ok: true });
-});
-
-// --- Market data ---
-apiRoutes.get("/quotes", async (c) => {
-  const symbols = (c.req.query("symbols") || "")
-    .split(",")
-    .map((s) => s.trim().toUpperCase())
-    .filter(Boolean);
-  if (symbols.length === 0) return c.json([]);
-  try {
-    const quotes = await getQuotes(symbols);
-    return c.json(quotes);
-  } catch (err) {
-    console.error(err);
-    return c.json({ error: "Failed to fetch quotes" }, 502);
-  }
-});
-
-apiRoutes.get("/history/:symbol", async (c) => {
-  const symbol = c.req.param("symbol").toUpperCase();
-  const range = historyRangeSchema.parse(c.req.query("range") || "1y");
-  try {
-    const bars = await getHistory(symbol, range);
-    return c.json({ symbol, range, bars });
-  } catch (err) {
-    console.error(err);
-    return c.json({ error: "Failed to fetch history" }, 502);
-  }
-});
-
-apiRoutes.get("/analytics/:symbol", async (c) => {
-  const symbol = c.req.param("symbol").toUpperCase();
-  const params = analyticsQuerySchema.parse({
-    range: c.req.query("range") || "1y",
-    amount: c.req.query("amount") || "1000",
-    dipPct: c.req.query("dipPct") || "10",
-  });
-  try {
-    const bars = await getHistory(symbol, params.range);
-    const analytics = computeAnalytics(
-      symbol,
-      params.range,
-      bars,
-      params.amount,
-      params.dipPct,
-    );
-    return c.json(analytics);
-  } catch (err) {
-    console.error(err);
-    return c.json({ error: "Failed to compute analytics" }, 502);
-  }
 });
 
 // --- Channels ---
@@ -325,5 +351,3 @@ apiRoutes.get("/alerts/events", async (c) => {
     })),
   );
 });
-
-export { id };

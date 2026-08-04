@@ -23,6 +23,12 @@ export const addWatchlist = (symbol: string) =>
 export const removeWatchlist = (id: string) =>
   api<{ ok: boolean }>(`/api/watchlist/${id}`, { method: "DELETE" });
 
+export const syncWatchlist = (symbols: string[]) =>
+  api<{ saved: string[] }>("/api/watchlist/sync", {
+    method: "POST",
+    body: JSON.stringify({ symbols }),
+  });
+
 export const fetchQuotes = (symbols: string[]) =>
   api<Quote[]>(`/api/quotes?symbols=${encodeURIComponent(symbols.join(","))}`);
 
