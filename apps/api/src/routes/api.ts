@@ -6,6 +6,7 @@ import {
   createAlertSchema,
   createChannelSchema,
   historyRangeSchema,
+  linkTelegramSchema,
   updateAlertSchema,
   updateChannelSchema,
 } from "@trader/shared";
@@ -18,16 +19,28 @@ import {
   watchlistItems,
 } from "../db/schema.js";
 import type { AppEnv } from "../middleware/auth.js";
-import { requireAuth } from "../middleware/auth.js";
-import { getHistory, getQuotes, resolveDisplayName } from "../services/yahoo.js";
+import { withAppUser } from "../middleware/auth.js";
+import { getHistory, getQuotes, resolveDisplayName, searchSymbols } from "../services/yahoo.js";
 import { computeAnalytics } from "../services/analytics.js";
 
 function id() {
   return crypto.randomUUID();
 }
 
-/** Public market data — no login required */
+/** Public market data */
 export const publicMarketRoutes = new Hono();
+
+publicMarketRoutes.get("/search", async (c) => {
+  const q = (c.req.query("q") || "").trim();
+  if (q.length < 1) return c.json([]);
+  try {
+    const results = await searchSymbols(q);
+    return c.json(results);
+  } catch (err) {
+    console.error(err);
+    return c.json({ error: "Failed to search symbols" }, 502);
+  }
+});
 
 publicMarketRoutes.get("/quotes", async (c) => {
   const symbols = (c.req.query("symbols") || "")
@@ -79,10 +92,10 @@ publicMarketRoutes.get("/analytics/:symbol", async (c) => {
   }
 });
 
-/** Authenticated app routes */
+/** App routes — auth optional via AUTH_ENABLED */
 export const apiRoutes = new Hono<AppEnv>();
 
-apiRoutes.use("*", requireAuth);
+apiRoutes.use("*", withAppUser);
 
 apiRoutes.get("/me", async (c) => {
   return c.json({ user: c.get("user") });
@@ -126,7 +139,9 @@ apiRoutes.post("/watchlist", async (c) => {
 apiRoutes.post("/watchlist/sync", async (c) => {
   const user = c.get("user");
   const body = await c.req.json<{ symbols?: string[] }>();
-  const symbols = [...new Set((body.symbols || []).map((s) => s.trim().toUpperCase()).filter(Boolean))];
+  const symbols = [
+    ...new Set((body.symbols || []).map((s) => s.trim().toUpperCase()).filter(Boolean)),
+  ];
   const saved: string[] = [];
   for (const symbol of symbols) {
     const displayName = await resolveDisplayName(symbol);
@@ -182,6 +197,7 @@ apiRoutes.post("/channels", async (c) => {
   const row = {
     id: id(),
     userId: user.id,
+    symbol: body.symbol,
     type: body.type,
     label: body.label,
     config: body.config,
@@ -207,6 +223,7 @@ apiRoutes.patch("/channels/:id", async (c) => {
     label: body.label ?? existing.label,
     config: body.config ?? existing.config,
     enabled: body.enabled ?? existing.enabled,
+    symbol: body.symbol ?? existing.symbol,
   };
   await db
     .update(notificationChannels)
@@ -234,11 +251,13 @@ apiRoutes.delete("/channels/:id", async (c) => {
 
 apiRoutes.post("/channels/telegram/link", async (c) => {
   const user = c.get("user");
+  const body = linkTelegramSchema.parse(await c.req.json().catch(() => ({})));
   const token = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
   const botUsername = process.env.TELEGRAM_BOT_USERNAME || "YourStockAlertsBot";
   await db.insert(telegramLinkTokens).values({
     id: id(),
     userId: user.id,
+    symbol: body.symbol,
     token,
     expiresAt: new Date(Date.now() + 15 * 60_000),
   });
@@ -246,6 +265,7 @@ apiRoutes.post("/channels/telegram/link", async (c) => {
     token,
     deepLink: `https://t.me/${botUsername}?start=${token}`,
     expiresInMinutes: 15,
+    symbol: body.symbol,
   });
 });
 
@@ -270,6 +290,20 @@ apiRoutes.get("/alerts", async (c) => {
 apiRoutes.post("/alerts", async (c) => {
   const user = c.get("user");
   const body = createAlertSchema.parse(await c.req.json());
+
+  const userChannels = await db
+    .select()
+    .from(notificationChannels)
+    .where(eq(notificationChannels.userId, user.id));
+  const allowed = new Set(
+    userChannels
+      .filter((ch) => (ch.symbol || "").toUpperCase() === body.symbol)
+      .map((ch) => ch.id),
+  );
+  if (!body.channelIds.every((id) => allowed.has(id))) {
+    return c.json({ error: "Channels must belong to this symbol" }, 400);
+  }
+
   const row = {
     id: id(),
     userId: user.id,

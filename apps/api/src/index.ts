@@ -7,6 +7,8 @@ import cron from "node-cron";
 import { auth } from "./auth.js";
 import { db } from "./db/index.js";
 import { notificationChannels, telegramLinkTokens } from "./db/schema.js";
+import { ensureLocalUser } from "./localUser.js";
+import { isAuthEnabled } from "./middleware/auth.js";
 import { apiRoutes, publicMarketRoutes } from "./routes/api.js";
 import { runAlertCycle } from "./worker/alerts.js";
 
@@ -25,9 +27,12 @@ app.use(
   }),
 );
 
+// Auth handlers stay mounted so re-enabling AUTH_ENABLED just works.
 app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
-app.get("/health", (c) => c.json({ ok: true }));
+app.get("/health", (c) =>
+  c.json({ ok: true, authEnabled: isAuthEnabled() }),
+);
 
 // Telegram bot webhook (public)
 app.post("/api/telegram/webhook", async (c) => {
@@ -64,15 +69,15 @@ app.post("/api/telegram/webhook", async (c) => {
   await db.insert(notificationChannels).values({
     id: crypto.randomUUID(),
     userId: link.userId,
+    symbol: link.symbol,
     type: "telegram",
-    label: "Telegram",
+    label: link.symbol ? `Telegram · ${link.symbol}` : "Telegram",
     config: { chatId: String(chatId) },
     enabled: true,
   });
 
   await db.delete(telegramLinkTokens).where(eq(telegramLinkTokens.id, link.id));
 
-  // Ack to user via Telegram if token configured
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   if (botToken) {
     await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
@@ -91,15 +96,24 @@ app.post("/api/telegram/webhook", async (c) => {
 app.route("/api", publicMarketRoutes);
 app.route("/api", apiRoutes);
 
-serve({ fetch: app.fetch, port }, () => {
-  console.log(`API listening on http://localhost:${port}`);
-});
+ensureLocalUser()
+  .then(() => {
+    serve({ fetch: app.fetch, port }, () => {
+      console.log(
+        `API listening on http://localhost:${port} (auth ${isAuthEnabled() ? "enabled" : "hidden"})`,
+      );
+    });
 
-const cronExpr = process.env.ALERT_CRON || "*/2 * * * *";
-cron.schedule(cronExpr, () => {
-  runAlertCycle()
-    .then((r) => {
-      if (r.fired > 0) console.log(`Alert cycle: checked=${r.checked} fired=${r.fired}`);
-    })
-    .catch((err) => console.error("Alert cycle failed", err));
-});
+    const cronExpr = process.env.ALERT_CRON || "*/2 * * * *";
+    cron.schedule(cronExpr, () => {
+      runAlertCycle()
+        .then((r) => {
+          if (r.fired > 0) console.log(`Alert cycle: checked=${r.checked} fired=${r.fired}`);
+        })
+        .catch((err) => console.error("Alert cycle failed", err));
+    });
+  })
+  .catch((err) => {
+    console.error("Failed to bootstrap local user", err);
+    process.exit(1);
+  });

@@ -1,14 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
-import type { Quote, WatchlistItem } from "@trader/shared";
+import { useDeferredValue, useEffect, useId, useRef, useState } from "react";
+import type { Quote, SymbolSearchResult, WatchlistItem } from "@trader/shared";
 import { authClient } from "../lib/auth";
+import { AUTH_ENABLED } from "../lib/features";
 import {
   addGuestSymbol,
   getGuestWatchlist,
   removeGuestSymbol,
 } from "../lib/guestWatchlist";
-import { addWatchlist, fetchQuotes, fetchWatchlist, removeWatchlist } from "../lib/queries";
+import {
+  addWatchlist,
+  fetchQuotes,
+  fetchWatchlist,
+  removeWatchlist,
+  searchSymbols,
+} from "../lib/queries";
 
 type Props = {
   selectedSymbol: string | null;
@@ -19,17 +26,23 @@ export function WatchlistPane({ selectedSymbol, onSelect }: Props) {
   const [symbol, setSymbol] = useState("");
   const [guestError, setGuestError] = useState<string | null>(null);
   const [guestTick, setGuestTick] = useState(0);
+  const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const listboxId = useId();
+  const wrapRef = useRef<HTMLDivElement>(null);
   const qc = useQueryClient();
+  const deferredQuery = useDeferredValue(symbol.trim());
   const { data: session, isPending: sessionPending } = authClient.useSession();
-  const isAuthed = Boolean(session?.user);
+  const isAuthed = !AUTH_ENABLED || Boolean(session?.user);
+  const useGuest = AUTH_ENABLED && !session?.user;
 
   const watchlist = useQuery({
-    queryKey: ["watchlist", isAuthed ? "server" : "guest", guestTick],
+    queryKey: ["watchlist", useGuest ? "guest" : "server", guestTick],
     queryFn: async () => {
-      if (isAuthed) return fetchWatchlist();
-      return getGuestWatchlist();
+      if (useGuest) return getGuestWatchlist();
+      return fetchWatchlist();
     },
-    enabled: !sessionPending,
+    enabled: !AUTH_ENABLED || !sessionPending,
   });
 
   const symbols = (watchlist.data || []).map((w) => w.symbol);
@@ -42,6 +55,49 @@ export function WatchlistPane({ selectedSymbol, onSelect }: Props) {
     staleTime: 30_000,
   });
 
+  const suggestions = useQuery({
+    queryKey: ["symbol-search", deferredQuery],
+    queryFn: () => searchSymbols(deferredQuery),
+    enabled: deferredQuery.length >= 1,
+    staleTime: 60_000,
+  });
+
+  const results = suggestions.data || [];
+
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [deferredQuery, results.length]);
+
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
+
+  // Drop stale restored selection once watchlist is known.
+  useEffect(() => {
+    if (!watchlist.isFetched || (AUTH_ENABLED && sessionPending)) return;
+    if (watchlist.isError && !useGuest) return;
+
+    const items = watchlist.data ?? [];
+    if (
+      selectedSymbol &&
+      (items.length === 0 || !items.some((w) => w.symbol === selectedSymbol))
+    ) {
+      onSelect("");
+    }
+  }, [
+    watchlist.isFetched,
+    watchlist.isError,
+    watchlist.data,
+    sessionPending,
+    useGuest,
+    selectedSymbol,
+    onSelect,
+  ]);
+
   const quoteMap = new Map((quotes.data || []).map((q) => [q.symbol, q]));
 
   const addMutation = useMutation({
@@ -49,6 +105,7 @@ export function WatchlistPane({ selectedSymbol, onSelect }: Props) {
     onSuccess: (item) => {
       qc.invalidateQueries({ queryKey: ["watchlist"] });
       setSymbol("");
+      setOpen(false);
       onSelect(item.symbol);
     },
   });
@@ -63,30 +120,54 @@ export function WatchlistPane({ selectedSymbol, onSelect }: Props) {
     if (!next) return;
     setGuestError(null);
 
-    if (isAuthed) {
-      addMutation.mutate(next);
+    if (useGuest) {
+      try {
+        const item = addGuestSymbol(next);
+        setGuestTick((t) => t + 1);
+        setSymbol("");
+        setOpen(false);
+        onSelect(item.symbol);
+      } catch (err) {
+        setGuestError((err as Error).message);
+      }
       return;
     }
 
-    try {
-      const item = addGuestSymbol(next);
-      setGuestTick((t) => t + 1);
-      setSymbol("");
-      onSelect(item.symbol);
-    } catch (err) {
-      setGuestError((err as Error).message);
-    }
+    addMutation.mutate(next);
+  }
+
+  function pickSuggestion(item: SymbolSearchResult) {
+    addSymbol(item.symbol);
   }
 
   function removeItem(item: WatchlistItem) {
-    if (isAuthed) {
-      removeMutation.mutate(item.id);
-    } else {
+    if (useGuest) {
       removeGuestSymbol(item.id);
       setGuestTick((t) => t + 1);
+    } else {
+      removeMutation.mutate(item.id);
     }
     if (selectedSymbol === item.symbol) onSelect("");
   }
+
+  function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (!open || results.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIndex((i) => (i + 1) % results.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIndex((i) => (i - 1 + results.length) % results.length);
+    } else if (e.key === "Enter" && results[activeIndex]) {
+      e.preventDefault();
+      pickSuggestion(results[activeIndex]!);
+    } else if (e.key === "Escape") {
+      setOpen(false);
+    }
+  }
+
+  const showSuggestions = open && deferredQuery.length >= 1;
 
   return (
     <div className="pane-left">
@@ -94,7 +175,7 @@ export function WatchlistPane({ selectedSymbol, onSelect }: Props) {
         <h2>Watchlist</h2>
       </div>
 
-      {!sessionPending && !isAuthed && (
+      {AUTH_ENABLED && !sessionPending && !isAuthed && (
         <div className="guest-banner">
           <span>Browsing as guest. Sign in to save your list across devices.</span>
           <Link to="/login" search={{ next: "/" }} className="btn btn-primary">
@@ -107,19 +188,68 @@ export function WatchlistPane({ selectedSymbol, onSelect }: Props) {
         className="add-form"
         onSubmit={(e) => {
           e.preventDefault();
+          if (showSuggestions && results[activeIndex]) {
+            pickSuggestion(results[activeIndex]!);
+            return;
+          }
           addSymbol(symbol);
         }}
       >
-        <input
-          value={symbol}
-          onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-          placeholder="Add symbol (e.g. AAPL)"
-          aria-label="Stock symbol"
-        />
+        <div className="symbol-search" ref={wrapRef}>
+          <input
+            value={symbol}
+            onChange={(e) => {
+              setSymbol(e.target.value.toUpperCase());
+              setOpen(true);
+            }}
+            onFocus={() => setOpen(true)}
+            onKeyDown={onKeyDown}
+            placeholder="Search stocks (e.g. AAPL)"
+            aria-label="Stock symbol"
+            aria-autocomplete="list"
+            aria-expanded={showSuggestions}
+            aria-controls={listboxId}
+            role="combobox"
+            autoComplete="off"
+          />
+          {showSuggestions && (
+            <ul className="symbol-suggestions" id={listboxId} role="listbox">
+              {suggestions.isFetching && results.length === 0 && (
+                <li className="symbol-suggestion muted">Searching…</li>
+              )}
+              {suggestions.isError && (
+                <li className="symbol-suggestion muted">Couldn’t search symbols</li>
+              )}
+              {!suggestions.isFetching && !suggestions.isError && results.length === 0 && (
+                <li className="symbol-suggestion muted">No matches</li>
+              )}
+              {results.map((item, index) => (
+                <li key={item.symbol} role="option" aria-selected={index === activeIndex}>
+                  <button
+                    type="button"
+                    className={`symbol-suggestion ${index === activeIndex ? "active" : ""}`}
+                    onMouseEnter={() => setActiveIndex(index)}
+                    onClick={() => pickSuggestion(item)}
+                  >
+                    <span className="symbol-suggestion-ticker">{item.symbol}</span>
+                    <span className="symbol-suggestion-meta">
+                      <span className="symbol-suggestion-name">{item.name}</span>
+                      {(item.exchange || item.type) && (
+                        <span className="symbol-suggestion-exch">
+                          {[item.exchange, item.type].filter(Boolean).join(" · ")}
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
         <button
           className="btn btn-primary"
           type="submit"
-          disabled={addMutation.isPending || sessionPending}
+          disabled={addMutation.isPending || (AUTH_ENABLED && sessionPending)}
         >
           Add
         </button>
@@ -130,11 +260,11 @@ export function WatchlistPane({ selectedSymbol, onSelect }: Props) {
           {guestError || (addMutation.error as Error).message}
         </div>
       )}
-      {watchlist.isError && isAuthed && (
+      {watchlist.isError && !useGuest && (
         <div className="error-banner">{(watchlist.error as Error).message}</div>
       )}
 
-      {watchlist.isLoading || sessionPending ? (
+      {watchlist.isLoading || (AUTH_ENABLED && sessionPending) ? (
         <div className="empty-state">Loading watchlist…</div>
       ) : !watchlist.data?.length ? (
         <div className="empty-state">
@@ -177,13 +307,8 @@ function StockRow({
   const pctClass = pct == null ? "" : pct >= 0 ? "pct-up" : "pct-down";
 
   return (
-    <div style={{ display: "flex", alignItems: "stretch" }}>
-      <button
-        type="button"
-        className={`stock-item ${active ? "active" : ""}`}
-        onClick={onSelect}
-        style={{ flex: 1 }}
-      >
+    <div className={`stock-row ${active ? "active" : ""}`}>
+      <button type="button" className="stock-item" onClick={onSelect}>
         <div>
           <div className="stock-symbol">{item.symbol}</div>
           <div className="stock-name">{item.displayName || quote?.shortName || "—"}</div>
@@ -197,12 +322,11 @@ function StockRow({
       </button>
       <button
         type="button"
-        className="btn btn-ghost btn-danger"
+        className="stock-remove"
         aria-label={`Remove ${item.symbol}`}
         onClick={onRemove}
-        style={{ marginRight: "0.5rem", alignSelf: "center" }}
       >
-        ×
+        <span aria-hidden="true">×</span>
       </button>
     </div>
   );

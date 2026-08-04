@@ -1,30 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
-import {
-  createChannel,
-  deleteChannel,
-  fetchChannels,
-  linkTelegram,
-  updateChannel,
-} from "../lib/queries";
-import { authClient } from "../lib/auth";
+import { SymbolChannels } from "../components/SymbolChannels";
+import { deleteChannel, fetchChannels, updateChannel } from "../lib/queries";
+import { readSelectedSymbol } from "../lib/selectedSymbol";
 
 export function ChannelsPage() {
   const qc = useQueryClient();
-  const { data: session } = authClient.useSession();
+  const [selected] = useState(() => readSelectedSymbol());
   const channels = useQuery({ queryKey: ["channels"], queryFn: fetchChannels });
-
-  const [emailLabel, setEmailLabel] = useState("Email alerts");
-  const [emailAddress, setEmailAddress] = useState(session?.user?.email || "");
-  const [twistLabel, setTwistLabel] = useState("Twist");
-  const [twistToken, setTwistToken] = useState("");
-  const [twistThread, setTwistThread] = useState("");
-  const [telegramLink, setTelegramLink] = useState<string | null>(null);
-
-  const createMut = useMutation({
-    mutationFn: createChannel,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["channels"] }),
-  });
 
   const updateMut = useMutation({
     mutationFn: ({ id, body }: { id: string; body: { enabled?: boolean } }) =>
@@ -37,25 +21,45 @@ export function ChannelsPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["channels"] }),
   });
 
-  const telegramMut = useMutation({
-    mutationFn: linkTelegram,
-    onSuccess: (data) => setTelegramLink(data.deepLink),
-  });
-
   return (
     <div className="page">
       <h1>Notification channels</h1>
       <p className="page-lead">
-        Connect email, Telegram, and Twist. Alerts fan out to every channel you attach to a
-        rule.
+        Overview of channels across all stocks. Primary management is on each stock&apos;s
+        detail pane.
       </p>
 
-      <div className="card-list" style={{ marginBottom: "2rem" }}>
+      <section className="card" style={{ marginBottom: "1.5rem" }}>
+        {selected ? (
+          <SymbolChannels symbol={selected} />
+        ) : (
+          <div className="empty-state" style={{ padding: "2rem 1rem", height: "auto" }}>
+            <strong>Select a stock</strong>
+            <span>
+              Open the{" "}
+              <Link to="/" style={{ color: "var(--accent)" }}>
+                watchlist
+              </Link>{" "}
+              and pick a symbol to add channels for that stock.
+            </span>
+          </div>
+        )}
+      </section>
+
+      <h2 style={{ fontSize: "1.05rem" }}>All channels</h2>
+      <div className="card-list">
         {(channels.data || []).map((ch) => (
           <div className="card" key={ch.id}>
             <div className="card-row">
               <div>
-                <div style={{ fontWeight: 600 }}>{ch.label}</div>
+                <div style={{ fontWeight: 600 }}>
+                  {ch.symbol ? (
+                    <span style={{ fontFamily: "var(--mono)" }}>{ch.symbol}</span>
+                  ) : (
+                    <span className="muted">Unassigned</span>
+                  )}{" "}
+                  · {ch.label}
+                </div>
                 <div className="muted">
                   <span className={`badge ${ch.enabled ? "badge-on" : ""}`}>{ch.type}</span>{" "}
                   {ch.type === "email" && String(ch.config.address || "")}
@@ -86,108 +90,9 @@ export function ChannelsPage() {
           </div>
         ))}
         {!channels.data?.length && !channels.isLoading && (
-          <div className="muted">No channels yet — add one below.</div>
+          <div className="muted">No channels yet — add one from a stock&apos;s detail pane.</div>
         )}
       </div>
-
-      <section className="card" style={{ marginBottom: "1rem" }}>
-        <h2 style={{ marginTop: 0, fontSize: "1.05rem" }}>Email</h2>
-        <div className="form-grid">
-          <div className="field">
-            <label>Label</label>
-            <input value={emailLabel} onChange={(e) => setEmailLabel(e.target.value)} />
-          </div>
-          <div className="field">
-            <label>Address</label>
-            <input
-              value={emailAddress}
-              onChange={(e) => setEmailAddress(e.target.value)}
-              placeholder={session?.user?.email || "you@example.com"}
-            />
-          </div>
-        </div>
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={() =>
-            createMut.mutate({
-              type: "email",
-              label: emailLabel,
-              config: { address: emailAddress || session?.user?.email },
-            })
-          }
-        >
-          Add email channel
-        </button>
-      </section>
-
-      <section className="card" style={{ marginBottom: "1rem" }}>
-        <h2 style={{ marginTop: 0, fontSize: "1.05rem" }}>Telegram</h2>
-        <p className="muted">
-          Generate a link, open it in Telegram, and tap Start. Your chat ID will be saved
-          automatically.
-        </p>
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={() => telegramMut.mutate()}
-          disabled={telegramMut.isPending}
-        >
-          Generate Telegram link
-        </button>
-        {telegramLink && (
-          <p style={{ marginTop: "0.75rem" }}>
-            <a href={telegramLink} target="_blank" rel="noreferrer">
-              Open Telegram bot
-            </a>
-          </p>
-        )}
-      </section>
-
-      <section className="card">
-        <h2 style={{ marginTop: 0, fontSize: "1.05rem" }}>Twist</h2>
-        <div className="form-grid">
-          <div className="field">
-            <label>Label</label>
-            <input value={twistLabel} onChange={(e) => setTwistLabel(e.target.value)} />
-          </div>
-          <div className="field">
-            <label>Access token</label>
-            <input
-              value={twistToken}
-              onChange={(e) => setTwistToken(e.target.value)}
-              placeholder="Optional if TWIST_ACCESS_TOKEN set"
-            />
-          </div>
-          <div className="field">
-            <label>Thread / conversation ID</label>
-            <input value={twistThread} onChange={(e) => setTwistThread(e.target.value)} />
-          </div>
-        </div>
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={() =>
-            createMut.mutate({
-              type: "twist",
-              label: twistLabel,
-              config: {
-                accessToken: twistToken || undefined,
-                conversationId: twistThread,
-                threadId: twistThread,
-              },
-            })
-          }
-        >
-          Add Twist channel
-        </button>
-      </section>
-
-      {createMut.isError && (
-        <div className="error-banner" style={{ marginTop: "1rem" }}>
-          {(createMut.error as Error).message}
-        </div>
-      )}
     </div>
   );
 }

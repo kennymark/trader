@@ -2,10 +2,12 @@
 
 Full-stack watchlist, historical charts, dip analytics, and multi-channel price alerts.
 
+No login for now — auth code is present but hidden behind `AUTH_ENABLED` / `VITE_AUTH_ENABLED` (default `false`). The API scopes data to a local user until you flip those flags.
+
 ## Stack
 
 - **Web:** Vite, React, TanStack Query, TanStack Router, Lightweight Charts
-- **API:** Hono, Better Auth (Google + email), Drizzle, Yahoo Finance
+- **API:** Hono, Better Auth (optional), Drizzle, Yahoo Finance
 - **DB:** PostgreSQL
 - **Alerts:** node-cron worker → Email (Resend), Telegram, Twist
 
@@ -13,17 +15,10 @@ Full-stack watchlist, historical charts, dip analytics, and multi-channel price 
 
 ### 1. Database
 
-Option A — Docker:
-
 ```bash
 docker compose up -d
-```
-
-Option B — local Postgres (already used if Docker is unavailable):
-
-```bash
-# create role/db if needed, then:
-psql -d trader -f apps/api/drizzle/0000_init.sql
+# or apply SQL manually:
+# psql -d trader -f apps/api/drizzle/0000_init.sql
 ```
 
 Default connection string:
@@ -36,16 +31,19 @@ postgresql://trader:trader@localhost:5432/trader
 
 ```bash
 cp .env.example apps/api/.env
+# optional web flag (also in apps/web/.env):
+# VITE_AUTH_ENABLED=false
 ```
-
-Fill in at least:
 
 | Variable | Purpose |
 |----------|---------|
 | `DATABASE_URL` | Postgres connection |
-| `BETTER_AUTH_SECRET` | Session secret (long random string) |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth (optional; email signup works without) |
-| `RESEND_API_KEY` / `EMAIL_FROM` | Email alerts (dry-runs to console if unset) |
+| `AUTH_ENABLED` | API: `true` to require sessions (default `false`) |
+| `VITE_AUTH_ENABLED` | Web: `true` to show Sign in / login page |
+| `BETTER_AUTH_SECRET` | Session secret (needed when auth is on) |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth |
+| `LOCAL_USER_ID` | Used while auth is off |
+| `RESEND_API_KEY` / `EMAIL_FROM` | Email alerts (dry-runs if unset) |
 | `TELEGRAM_BOT_TOKEN` / `TELEGRAM_BOT_USERNAME` | Telegram bot |
 | `TWIST_ACCESS_TOKEN` | Optional global Twist token |
 
@@ -58,7 +56,9 @@ npm run dev:api   # http://localhost:3001
 npm run dev:web   # http://localhost:5173
 ```
 
-Sign up with email/password, or configure Google OAuth and use **Continue with Google**.
+Open the web app — no sign-in required while auth flags are false.
+
+To turn auth back on: set `AUTH_ENABLED=true` in `apps/api/.env` and `VITE_AUTH_ENABLED=true` in `apps/web/.env`, then restart both.
 
 ## App surfaces
 
@@ -79,15 +79,7 @@ For the selected range and customizable inputs:
 
 ## Alerts worker
 
-Every 2 minutes (configurable via `ALERT_CRON`), the API:
-
-1. Loads enabled rules
-2. Fetches Yahoo quotes (with in-memory cache + retries)
-3. Evaluates above / below / % drop / % rise
-4. Respects per-rule cooldowns
-5. Delivers to selected channels and writes `alert_events`
-
-Without provider API keys, deliveries are logged as dry-runs so local testing still works.
+Every 2 minutes (configurable via `ALERT_CRON`), the API evaluates rules, delivers to channels, and writes `alert_events`. Without provider API keys, deliveries are logged as dry-runs.
 
 ## Telegram setup
 

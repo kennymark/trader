@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { authClient } from "../lib/auth";
+import { AUTH_ENABLED } from "../lib/features";
 
 type Props = {
   user: { name: string; email: string; image?: string | null } | null;
@@ -30,25 +31,27 @@ export function AppShell({ user, children }: Props) {
             Channels
           </Link>
         </nav>
-        <div className="user-chip">
-          {user ? (
-            <>
-              {user.image ? <img src={user.image} alt="" /> : null}
-              <span>{user.name || user.email}</span>
-              <button
-                type="button"
-                className="btn btn-ghost"
-                onClick={() => authClient.signOut()}
-              >
-                Sign out
-              </button>
-            </>
-          ) : (
-            <Link to="/login" className="btn btn-primary" search={{ next: pathname }}>
-              Sign in
-            </Link>
-          )}
-        </div>
+        {AUTH_ENABLED && (
+          <div className="user-chip">
+            {user ? (
+              <>
+                {user.image ? <img src={user.image} alt="" /> : null}
+                <span>{user.name || user.email}</span>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => authClient.signOut()}
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <Link to="/login" className="btn btn-primary" search={{ next: pathname }}>
+                Sign in
+              </Link>
+            )}
+          </div>
+        )}
       </header>
       {children}
     </div>

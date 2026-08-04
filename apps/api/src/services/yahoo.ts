@@ -1,4 +1,4 @@
-import type { HistoryBar, HistoryRange, Quote } from "@trader/shared";
+import type { HistoryBar, HistoryRange, Quote, SymbolSearchResult } from "@trader/shared";
 import YahooFinance from "yahoo-finance2";
 
 const yahooFinance = new YahooFinance({
@@ -7,9 +7,11 @@ const yahooFinance = new YahooFinance({
 
 const quoteCache = new Map<string, { at: number; data: Quote }>();
 const historyCache = new Map<string, { at: number; data: HistoryBar[] }>();
+const searchCache = new Map<string, { at: number; data: SymbolSearchResult[] }>();
 
 const QUOTE_TTL_MS = 30_000;
 const HISTORY_TTL_MS = 5 * 60_000;
+const SEARCH_TTL_MS = 60_000;
 
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
@@ -133,3 +135,54 @@ export async function resolveDisplayName(symbol: string): Promise<string | null>
     return null;
   }
 }
+
+const ALLOWED_TYPES = new Set(["EQUITY", "ETF", "INDEX", "MUTUALFUND"]);
+
+export async function searchSymbols(query: string, limit = 8): Promise<SymbolSearchResult[]> {
+  const q = query.trim();
+  if (q.length < 1) return [];
+
+  const key = q.toUpperCase();
+  const cached = searchCache.get(key);
+  if (cached && Date.now() - cached.at < SEARCH_TTL_MS) {
+    return cached.data.slice(0, limit);
+  }
+
+  const result = await withRetry(() => yahooFinance.search(q, { quotesCount: 12, newsCount: 0 }));
+  const quotes = (result?.quotes || []) as Array<{
+    symbol?: string;
+    shortname?: string;
+    longname?: string;
+    quoteType?: string;
+    exchDisp?: string;
+    exchange?: string;
+  }>;
+
+  const mapped: SymbolSearchResult[] = quotes
+    .filter((item) => item.symbol && (!item.quoteType || ALLOWED_TYPES.has(item.quoteType)))
+    .map((item) => ({
+      symbol: String(item.symbol).toUpperCase(),
+      name: item.longname || item.shortname || String(item.symbol),
+      exchange: item.exchDisp || item.exchange,
+      type: item.quoteType,
+    }));
+
+  // Prefer exact / prefix matches, then keep order from Yahoo.
+  mapped.sort((a, b) => {
+    const aq = a.symbol === key ? 0 : a.symbol.startsWith(key) ? 1 : 2;
+    const bq = b.symbol === key ? 0 : b.symbol.startsWith(key) ? 1 : 2;
+    return aq - bq;
+  });
+
+  const unique: SymbolSearchResult[] = [];
+  const seen = new Set<string>();
+  for (const item of mapped) {
+    if (seen.has(item.symbol)) continue;
+    seen.add(item.symbol);
+    unique.push(item);
+  }
+
+  searchCache.set(key, { at: Date.now(), data: unique });
+  return unique.slice(0, limit);
+}
+

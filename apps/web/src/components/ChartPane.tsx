@@ -2,13 +2,35 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import type { HistoryRange } from "@trader/shared";
 import { fetchAnalytics, fetchHistory } from "../lib/queries";
+import { Drawer } from "./Drawer";
 import { PriceChart } from "./PriceChart";
+import { SymbolAlerts } from "./SymbolAlerts";
+import { SymbolChannels } from "./SymbolChannels";
 
 const RANGES: HistoryRange[] = ["1m", "3m", "1y", "5y", "max"];
+const SHOW_WHAT_IF_KEY = "trader:show-what-if";
 
 type Props = {
   symbol: string | null;
 };
+
+type DrawerKind = "alerts" | "channels" | null;
+
+function readShowWhatIf(): boolean {
+  try {
+    return localStorage.getItem(SHOW_WHAT_IF_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function writeShowWhatIf(show: boolean) {
+  try {
+    localStorage.setItem(SHOW_WHAT_IF_KEY, show ? "1" : "0");
+  } catch {
+    // ignore quota / private-mode failures
+  }
+}
 
 function fmtPct(n: number | null | undefined) {
   if (n == null || Number.isNaN(n)) return "—";
@@ -24,6 +46,8 @@ export function ChartPane({ symbol }: Props) {
   const [range, setRange] = useState<HistoryRange>("1y");
   const [amount, setAmount] = useState(1000);
   const [dipPct, setDipPct] = useState(10);
+  const [showWhatIf, setShowWhatIf] = useState(readShowWhatIf);
+  const [drawer, setDrawer] = useState<DrawerKind>(null);
 
   const history = useQuery({
     queryKey: ["history", symbol, range],
@@ -44,7 +68,7 @@ export function ChartPane({ symbol }: Props) {
       <div className="pane-right">
         <div className="empty-state">
           <strong>Select a stock</strong>
-          <span>Pick a symbol from your watchlist to see history and dip analytics.</span>
+          <span>Pick a symbol from your watchlist to see history, alerts, and channels.</span>
         </div>
       </div>
     );
@@ -56,17 +80,35 @@ export function ChartPane({ symbol }: Props) {
     <div className="pane-right">
       <div className="chart-toolbar">
         <h1>{symbol}</h1>
-        <div className="range-tabs">
-          {RANGES.map((r) => (
+        <div className="chart-toolbar-actions">
+          <div className="range-tabs">
+            {RANGES.map((r) => (
+              <button
+                key={r}
+                type="button"
+                className={range === r ? "active" : ""}
+                onClick={() => setRange(r)}
+              >
+                {r.toUpperCase()}
+              </button>
+            ))}
+          </div>
+          <div className="symbol-drawer-triggers">
             <button
-              key={r}
               type="button"
-              className={range === r ? "active" : ""}
-              onClick={() => setRange(r)}
+              className={`btn ${drawer === "channels" ? "btn-primary" : ""}`}
+              onClick={() => setDrawer("channels")}
             >
-              {r.toUpperCase()}
+              Channels
             </button>
-          ))}
+            <button
+              type="button"
+              className={`btn ${drawer === "alerts" ? "btn-primary" : ""}`}
+              onClick={() => setDrawer("alerts")}
+            >
+              Alerts
+            </button>
+          </div>
         </div>
       </div>
 
@@ -86,30 +128,6 @@ export function ChartPane({ symbol }: Props) {
 
       <section className="analytics">
         <div className="analytics-controls">
-          <div className="field">
-            <label htmlFor="amount">What-if amount</label>
-            <input
-              id="amount"
-              type="number"
-              min={1}
-              value={amount}
-              onChange={(e) => setAmount(Number(e.target.value) || 1000)}
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="preset">Quick amount</label>
-            <select
-              id="preset"
-              value={amount === 1000 || amount === 10000 ? amount : ""}
-              onChange={(e) => {
-                if (e.target.value) setAmount(Number(e.target.value));
-              }}
-            >
-              <option value="">Custom</option>
-              <option value={1000}>$1,000</option>
-              <option value={10000}>$10,000</option>
-            </select>
-          </div>
           <div className="field">
             <label htmlFor="dip">Dip threshold %</label>
             <input
@@ -141,7 +159,11 @@ export function ChartPane({ symbol }: Props) {
               label={`Dips ≥${a.dipRecovery.dipPct}%`}
               value={String(a.dipRecovery.eventCount)}
             />
-            <Stat label="Avg bounce after dip" value={fmtPct(a.dipRecovery.avgBouncePct)} tone={a.dipRecovery.avgBouncePct} />
+            <Stat
+              label="Avg bounce after dip"
+              value={fmtPct(a.dipRecovery.avgBouncePct)}
+              tone={a.dipRecovery.avgBouncePct}
+            />
             <Stat
               label="Avg days to recover"
               value={
@@ -150,12 +172,86 @@ export function ChartPane({ symbol }: Props) {
                   : "—"
               }
             />
-            <Stat label="Ending value" value={fmtMoney(a.whatIf.endingValue)} />
-            <Stat label="Profit" value={fmtMoney(a.whatIf.profit)} tone={a.whatIf.profit} />
-            <Stat label="Profit %" value={fmtPct(a.whatIf.profitPct)} tone={a.whatIf.profitPct} />
           </div>
         )}
+
+        <div className="what-if">
+          <button
+            type="button"
+            className="what-if-toggle"
+            aria-expanded={showWhatIf}
+            onClick={() => {
+              const next = !showWhatIf;
+              setShowWhatIf(next);
+              writeShowWhatIf(next);
+            }}
+          >
+            <span className="what-if-chevron" aria-hidden>
+              {showWhatIf ? "▾" : "▸"}
+            </span>
+            What-if
+          </button>
+
+          {showWhatIf && (
+            <div className="what-if-panel">
+              <div className="analytics-controls">
+                <div className="field">
+                  <label htmlFor="amount">Amount</label>
+                  <input
+                    id="amount"
+                    type="number"
+                    min={1}
+                    value={amount}
+                    onChange={(e) => setAmount(Number(e.target.value) || 1000)}
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="preset">Quick amount</label>
+                  <select
+                    id="preset"
+                    value={amount === 1000 || amount === 10000 ? amount : ""}
+                    onChange={(e) => {
+                      if (e.target.value) setAmount(Number(e.target.value));
+                    }}
+                  >
+                    <option value="">Custom</option>
+                    <option value={1000}>$1,000</option>
+                    <option value={10000}>$10,000</option>
+                  </select>
+                </div>
+              </div>
+
+              {a && (
+                <div className="stats-grid">
+                  <Stat label="Ending value" value={fmtMoney(a.whatIf.endingValue)} />
+                  <Stat label="Profit" value={fmtMoney(a.whatIf.profit)} tone={a.whatIf.profit} />
+                  <Stat
+                    label="Profit %"
+                    value={fmtPct(a.whatIf.profitPct)}
+                    tone={a.whatIf.profitPct}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </section>
+
+      <Drawer
+        open={drawer === "channels"}
+        title={`Channels · ${symbol}`}
+        onClose={() => setDrawer(null)}
+      >
+        <SymbolChannels key={`ch-${symbol}`} symbol={symbol} embedded />
+      </Drawer>
+
+      <Drawer
+        open={drawer === "alerts"}
+        title={`Alerts · ${symbol}`}
+        onClose={() => setDrawer(null)}
+      >
+        <SymbolAlerts key={`al-${symbol}`} symbol={symbol} embedded />
+      </Drawer>
     </div>
   );
 }

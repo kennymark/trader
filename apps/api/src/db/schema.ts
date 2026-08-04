@@ -79,6 +79,8 @@ export const notificationChannels = pgTable("notification_channels", {
   userId: text("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
+  /** Stock ticker this channel belongs to; null = legacy/global. */
+  symbol: text("symbol"),
   type: text("type").notNull(), // email | telegram | twist
   label: text("label").notNull(),
   config: jsonb("config").$type<Record<string, unknown>>().notNull().default({}),
@@ -124,6 +126,8 @@ export const telegramLinkTokens = pgTable("telegram_link_tokens", {
   userId: text("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
+  /** Symbol the resulting Telegram channel should be bound to. */
+  symbol: text("symbol"),
   token: text("token").notNull().unique(),
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),

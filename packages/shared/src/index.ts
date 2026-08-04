@@ -21,10 +21,18 @@ export const addWatchlistSchema = z.object({
     .transform((s) => s.toUpperCase()),
 });
 
+const symbolField = z
+  .string()
+  .trim()
+  .min(1)
+  .max(16)
+  .transform((s) => s.toUpperCase());
+
 export const createChannelSchema = z.object({
   type: channelTypeSchema,
   label: z.string().trim().min(1).max(80),
   config: z.record(z.unknown()),
+  symbol: symbolField,
   enabled: z.boolean().optional().default(true),
 });
 
@@ -32,15 +40,15 @@ export const updateChannelSchema = z.object({
   label: z.string().trim().min(1).max(80).optional(),
   config: z.record(z.unknown()).optional(),
   enabled: z.boolean().optional(),
+  symbol: symbolField.optional(),
+});
+
+export const linkTelegramSchema = z.object({
+  symbol: symbolField,
 });
 
 export const createAlertSchema = z.object({
-  symbol: z
-    .string()
-    .trim()
-    .min(1)
-    .max(16)
-    .transform((s) => s.toUpperCase()),
+  symbol: symbolField,
   kind: alertKindSchema,
   threshold: z.number().finite(),
   baseline: alertBaselineSchema.default("prev_close"),
@@ -67,6 +75,13 @@ export type Quote = {
   changePercent: number | null;
   currency?: string;
   marketCap?: number | null;
+};
+
+export type SymbolSearchResult = {
+  symbol: string;
+  name: string;
+  exchange?: string;
+  type?: string;
 };
 
 export type HistoryBar = {
@@ -114,6 +129,7 @@ export type WatchlistItem = {
 
 export type NotificationChannel = {
   id: string;
+  symbol: string | null;
   type: ChannelType;
   label: string;
   config: Record<string, unknown>;

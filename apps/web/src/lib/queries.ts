@@ -6,11 +6,10 @@ import type {
   HistoryRange,
   NotificationChannel,
   Quote,
+  SymbolSearchResult,
   WatchlistItem,
 } from "@trader/shared";
 import { api } from "./api";
-
-export const fetchMe = () => api<{ user: { id: string; name: string; email: string; image?: string | null } }>("/api/me");
 
 export const fetchWatchlist = () => api<WatchlistItem[]>("/api/watchlist");
 
@@ -32,6 +31,9 @@ export const syncWatchlist = (symbols: string[]) =>
 export const fetchQuotes = (symbols: string[]) =>
   api<Quote[]>(`/api/quotes?symbols=${encodeURIComponent(symbols.join(","))}`);
 
+export const searchSymbols = (q: string) =>
+  api<SymbolSearchResult[]>(`/api/search?q=${encodeURIComponent(q)}`);
+
 export const fetchHistory = (symbol: string, range: HistoryRange) =>
   api<{ symbol: string; range: HistoryRange; bars: HistoryBar[] }>(
     `/api/history/${symbol}?range=${range}`,
@@ -51,6 +53,8 @@ export const createChannel = (body: {
   type: string;
   label: string;
   config: Record<string, unknown>;
+  symbol: string;
+  enabled?: boolean;
 }) =>
   api<NotificationChannel>("/api/channels", {
     method: "POST",
@@ -59,7 +63,12 @@ export const createChannel = (body: {
 
 export const updateChannel = (
   id: string,
-  body: Partial<{ label: string; config: Record<string, unknown>; enabled: boolean }>,
+  body: Partial<{
+    label: string;
+    config: Record<string, unknown>;
+    enabled: boolean;
+    symbol: string;
+  }>,
 ) =>
   api<NotificationChannel>(`/api/channels/${id}`, {
     method: "PATCH",
@@ -69,10 +78,10 @@ export const updateChannel = (
 export const deleteChannel = (id: string) =>
   api<{ ok: boolean }>(`/api/channels/${id}`, { method: "DELETE" });
 
-export const linkTelegram = () =>
-  api<{ token: string; deepLink: string; expiresInMinutes: number }>(
+export const linkTelegram = (symbol: string) =>
+  api<{ token: string; deepLink: string; expiresInMinutes: number; symbol: string }>(
     "/api/channels/telegram/link",
-    { method: "POST" },
+    { method: "POST", body: JSON.stringify({ symbol }) },
   );
 
 export const fetchAlerts = () => api<AlertRule[]>("/api/alerts");
