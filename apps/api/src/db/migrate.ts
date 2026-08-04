@@ -9,7 +9,7 @@ if (!connectionString) {
 }
 
 async function main() {
-  const client = postgres(connectionString, { max: 1 });
+  const client = postgres(connectionString!, { max: 1 });
   const db = drizzle(client);
   await migrate(db, { migrationsFolder: "./drizzle" });
   await client.end();

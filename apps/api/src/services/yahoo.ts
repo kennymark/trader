@@ -1,21 +1,15 @@
 import type { HistoryBar, HistoryRange, Quote } from "@trader/shared";
-import yahooFinance from "yahoo-finance2";
+import YahooFinance from "yahoo-finance2";
 
-yahooFinance.setGlobalConfig({ validation: { logErrors: false } });
+const yahooFinance = new YahooFinance({
+  suppressNotices: ["yahooSurvey"],
+});
 
 const quoteCache = new Map<string, { at: number; data: Quote }>();
 const historyCache = new Map<string, { at: number; data: HistoryBar[] }>();
 
 const QUOTE_TTL_MS = 30_000;
 const HISTORY_TTL_MS = 5 * 60_000;
-
-const RANGE_PERIOD: Record<HistoryRange, string> = {
-  "1m": "1mo",
-  "3m": "3mo",
-  "1y": "1y",
-  "5y": "5y",
-  max: "max",
-};
 
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
@@ -28,8 +22,7 @@ async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
       return await fn();
     } catch (err) {
       lastErr = err;
-      const delay = 400 * 2 ** i;
-      await sleep(delay);
+      await sleep(400 * 2 ** i);
     }
   }
   throw lastErr;
@@ -94,14 +87,15 @@ export async function getHistory(symbol: string, range: HistoryRange): Promise<H
   }
 
   const result = await withRetry(() =>
-    yahooFinance.historical(symbol.toUpperCase(), {
+    yahooFinance.chart(symbol.toUpperCase(), {
       period1: periodStart(range),
       interval: "1d",
     }),
   );
 
-  const bars: HistoryBar[] = (result || [])
-    .filter((r) => r.close != null)
+  const quotes = result?.quotes || [];
+  const bars: HistoryBar[] = quotes
+    .filter((r) => r.close != null && r.date != null)
     .map((r) => ({
       time: Math.floor(new Date(r.date).getTime() / 1000),
       open: r.open ?? r.close!,
@@ -139,5 +133,3 @@ export async function resolveDisplayName(symbol: string): Promise<string | null>
     return null;
   }
 }
-
-export { RANGE_PERIOD };

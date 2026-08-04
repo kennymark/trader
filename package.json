@@ -6,15 +6,20 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev -w @trader/web & npm run dev -w @trader/api",
+    "dev": "npm run build -w @trader/shared && npm run dev:api & npm run dev:web",
     "dev:web": "npm run dev -w @trader/web",
     "dev:api": "npm run dev -w @trader/api",
     "build": "npm run build -w @trader/shared && npm run build -w @trader/api && npm run build -w @trader/web",
     "db:generate": "npm run db:generate -w @trader/api",
     "db:migrate": "npm run db:migrate -w @trader/api",
-    "db:push": "npm run db:push -w @trader/api"
+    "db:push": "npm run db:push -w @trader/api",
+    "db:init": "psql -d trader -f apps/api/drizzle/0000_init.sql"
   },
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.2",
+    "postgres": "^3.4.9"
   }
 }

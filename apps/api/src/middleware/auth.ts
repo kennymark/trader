@@ -1,5 +1,5 @@
 import { createMiddleware } from "hono/factory";
-import { auth, type SessionUser } from "./auth.js";
+import { auth, type SessionUser } from "../auth.js";
 
 export type AppEnv = {
   Variables: {
