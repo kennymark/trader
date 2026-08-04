@@ -1,7 +1,12 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { authClient } from "../lib/auth";
 
-export function LoginPage() {
+type Props = {
+  next?: string;
+};
+
+export function LoginPage({ next = "/" }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -10,12 +15,13 @@ export function LoginPage() {
   const [pending, setPending] = useState(false);
 
   const googleEnabled = Boolean(import.meta.env.VITE_GOOGLE_AUTH !== "false");
+  const callbackURL = `${window.location.origin}${next.startsWith("/") ? next : `/${next}`}`;
 
   async function signInGoogle() {
     setError(null);
     await authClient.signIn.social({
       provider: "google",
-      callbackURL: window.location.origin,
+      callbackURL,
     });
   }
 
@@ -31,6 +37,7 @@ export function LoginPage() {
         const res = await authClient.signIn.email({ email, password });
         if (res.error) throw new Error(res.error.message || "Sign in failed");
       }
+      window.location.href = next;
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -45,7 +52,10 @@ export function LoginPage() {
           <img className="brand-mark" src="/favicon.svg" alt="" />
           Trader
         </div>
-        <p>Watch big-cap dips, chart history, and get alerts on email, Telegram, and Twist.</p>
+        <p>
+          Sign in to save your watchlist, set price alerts, and connect email, Telegram, or
+          Twist.
+        </p>
 
         {googleEnabled && (
           <>
@@ -106,6 +116,11 @@ export function LoginPage() {
             </>
           )}
         </p>
+
+        <div className="divider">or</div>
+        <Link to="/" className="btn" style={{ width: "100%", textDecoration: "none" }}>
+          Continue without signing in
+        </Link>
       </div>
     </div>
   );

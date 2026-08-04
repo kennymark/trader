@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { authClient } from "../lib/auth";
 
 type Props = {
-  user: { name: string; email: string; image?: string | null };
+  user: { name: string; email: string; image?: string | null } | null;
   children: React.ReactNode;
 };
 
@@ -12,10 +12,10 @@ export function AppShell({ user, children }: Props) {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <div className="brand">
+        <Link to="/" className="brand" style={{ textDecoration: "none", color: "inherit" }}>
           <img className="brand-mark" src="/favicon.svg" alt="" />
           Trader
-        </div>
+        </Link>
         <nav className="nav-links">
           <Link to="/" className={pathname === "/" ? "active" : ""}>
             Watchlist
@@ -31,15 +31,23 @@ export function AppShell({ user, children }: Props) {
           </Link>
         </nav>
         <div className="user-chip">
-          {user.image ? <img src={user.image} alt="" /> : null}
-          <span>{user.name || user.email}</span>
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={() => authClient.signOut()}
-          >
-            Sign out
-          </button>
+          {user ? (
+            <>
+              {user.image ? <img src={user.image} alt="" /> : null}
+              <span>{user.name || user.email}</span>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => authClient.signOut()}
+              >
+                Sign out
+              </button>
+            </>
+          ) : (
+            <Link to="/login" className="btn btn-primary" search={{ next: pathname }}>
+              Sign in
+            </Link>
+          )}
         </div>
       </header>
       {children}

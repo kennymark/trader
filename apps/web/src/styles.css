@@ -545,6 +545,23 @@ a:hover {
   color: var(--accent);
 }
 
+.guest-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin: 0.75rem 1.1rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(124, 255, 178, 0.06);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.guest-banner .btn {
+  align-self: flex-start;
+}
+
 @media (max-width: 800px) {
   .two-pane {
     grid-template-columns: 1fr;

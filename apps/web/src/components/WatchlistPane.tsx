@@ -1,6 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import type { Quote, WatchlistItem } from "@trader/shared";
+import { authClient } from "../lib/auth";
+import {
+  addGuestSymbol,
+  getGuestWatchlist,
+  removeGuestSymbol,
+} from "../lib/guestWatchlist";
 import { addWatchlist, fetchQuotes, fetchWatchlist, removeWatchlist } from "../lib/queries";
 
 type Props = {
@@ -10,11 +17,19 @@ type Props = {
 
 export function WatchlistPane({ selectedSymbol, onSelect }: Props) {
   const [symbol, setSymbol] = useState("");
+  const [guestError, setGuestError] = useState<string | null>(null);
+  const [guestTick, setGuestTick] = useState(0);
   const qc = useQueryClient();
+  const { data: session, isPending: sessionPending } = authClient.useSession();
+  const isAuthed = Boolean(session?.user);
 
   const watchlist = useQuery({
-    queryKey: ["watchlist"],
-    queryFn: fetchWatchlist,
+    queryKey: ["watchlist", isAuthed ? "server" : "guest", guestTick],
+    queryFn: async () => {
+      if (isAuthed) return fetchWatchlist();
+      return getGuestWatchlist();
+    },
+    enabled: !sessionPending,
   });
 
   const symbols = (watchlist.data || []).map((w) => w.symbol);
@@ -43,17 +58,56 @@ export function WatchlistPane({ selectedSymbol, onSelect }: Props) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["watchlist"] }),
   });
 
+  function addSymbol(raw: string) {
+    const next = raw.trim().toUpperCase();
+    if (!next) return;
+    setGuestError(null);
+
+    if (isAuthed) {
+      addMutation.mutate(next);
+      return;
+    }
+
+    try {
+      const item = addGuestSymbol(next);
+      setGuestTick((t) => t + 1);
+      setSymbol("");
+      onSelect(item.symbol);
+    } catch (err) {
+      setGuestError((err as Error).message);
+    }
+  }
+
+  function removeItem(item: WatchlistItem) {
+    if (isAuthed) {
+      removeMutation.mutate(item.id);
+    } else {
+      removeGuestSymbol(item.id);
+      setGuestTick((t) => t + 1);
+    }
+    if (selectedSymbol === item.symbol) onSelect("");
+  }
+
   return (
     <div className="pane-left">
       <div className="pane-header">
         <h2>Watchlist</h2>
       </div>
+
+      {!sessionPending && !isAuthed && (
+        <div className="guest-banner">
+          <span>Browsing as guest. Sign in to save your list across devices.</span>
+          <Link to="/login" search={{ next: "/" }} className="btn btn-primary">
+            Sign in to save
+          </Link>
+        </div>
+      )}
+
       <form
         className="add-form"
         onSubmit={(e) => {
           e.preventDefault();
-          if (!symbol.trim()) return;
-          addMutation.mutate(symbol.trim());
+          addSymbol(symbol);
         }}
       >
         <input
@@ -62,19 +116,25 @@ export function WatchlistPane({ selectedSymbol, onSelect }: Props) {
           placeholder="Add symbol (e.g. AAPL)"
           aria-label="Stock symbol"
         />
-        <button className="btn btn-primary" type="submit" disabled={addMutation.isPending}>
+        <button
+          className="btn btn-primary"
+          type="submit"
+          disabled={addMutation.isPending || sessionPending}
+        >
           Add
         </button>
       </form>
 
-      {addMutation.isError && (
-        <div className="error-banner">{(addMutation.error as Error).message}</div>
+      {(addMutation.isError || guestError) && (
+        <div className="error-banner">
+          {guestError || (addMutation.error as Error).message}
+        </div>
       )}
-      {watchlist.isError && (
+      {watchlist.isError && isAuthed && (
         <div className="error-banner">{(watchlist.error as Error).message}</div>
       )}
 
-      {watchlist.isLoading ? (
+      {watchlist.isLoading || sessionPending ? (
         <div className="empty-state">Loading watchlist…</div>
       ) : !watchlist.data?.length ? (
         <div className="empty-state">
@@ -90,10 +150,7 @@ export function WatchlistPane({ selectedSymbol, onSelect }: Props) {
                 quote={quoteMap.get(item.symbol)}
                 active={selectedSymbol === item.symbol}
                 onSelect={() => onSelect(item.symbol)}
-                onRemove={() => {
-                  removeMutation.mutate(item.id);
-                  if (selectedSymbol === item.symbol) onSelect("");
-                }}
+                onRemove={() => removeItem(item)}
               />
             </li>
           ))}
