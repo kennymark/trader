@@ -1,0 +1,15 @@
+node_modules
+.pnpm-store
+dist
+build
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+coverage
+.turbo
+.cache
+drizzle/meta
+apps/api/drizzle/meta
+*.tsbuildinfo
