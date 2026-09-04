@@ -3553,9 +3553,6 @@ table th {
 /* Statutory focus: a yellow field under a black bar, never a soft glow. */
 a:focus-visible,
 button:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible,
 [tabindex]:focus-visible {
   outline: 3px solid transparent;
   background-color: var(--focus);
@@ -4160,4 +4157,27 @@ select {
   background: var(--bg);
   backdrop-filter: none;
   border-bottom: 1px solid var(--border);
+}
+
+/* A field you type in keeps its own ground: filling it on focus fights the text
+   being entered. Focus is carried by a heavier edge and a clear ring instead. */
+input:focus,
+select:focus,
+textarea:focus,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  background: var(--bg);
+  color: var(--ink);
+  border-color: var(--ink);
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.navsearch input:focus,
+.navsearch input:focus-visible {
+  border-bottom-color: var(--ink);
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
 }
