@@ -5,8 +5,7 @@ import { fetchAnalytics, fetchHistory } from "../lib/queries";
 import { usePreferences } from "../lib/preferences";
 import { Drawer } from "./Drawer";
 import { PriceChart } from "./PriceChart";
-import { SymbolAlerts } from "./SymbolAlerts";
-import { SymbolChannels } from "./SymbolChannels";
+import { SymbolNotifications } from "./SymbolNotifications";
 
 const RANGES: HistoryRange[] = ["1d", "7d", "1m", "3m", "1y", "5y", "max"];
 
@@ -14,7 +13,7 @@ type Props = {
   symbol: string | null;
 };
 
-type DrawerKind = "alerts" | "channels" | null;
+type DrawerKind = "notifications" | null;
 
 function fmtPct(n: number | null | undefined) {
   if (n == null || Number.isNaN(n)) return "—";
@@ -83,17 +82,10 @@ export function ChartPane({ symbol }: Props) {
           <div className="symbol-drawer-triggers">
             <button
               type="button"
-              className={`btn ${drawer === "channels" ? "btn-primary" : ""}`}
-              onClick={() => setDrawer("channels")}
+              className={`btn ${drawer === "notifications" ? "btn-primary" : ""}`}
+              onClick={() => setDrawer("notifications")}
             >
-              Channels
-            </button>
-            <button
-              type="button"
-              className={`btn ${drawer === "alerts" ? "btn-primary" : ""}`}
-              onClick={() => setDrawer("alerts")}
-            >
-              Alerts
+              Notify me
             </button>
           </div>
         </div>
@@ -150,19 +142,11 @@ export function ChartPane({ symbol }: Props) {
       </section>
 
       <Drawer
-        open={drawer === "channels"}
-        title={`Channels · ${symbol}`}
+        open={drawer === "notifications"}
+        title={`Notify me · ${symbol}`}
         onClose={() => setDrawer(null)}
       >
-        <SymbolChannels key={`ch-${symbol}`} symbol={symbol} embedded />
-      </Drawer>
-
-      <Drawer
-        open={drawer === "alerts"}
-        title={`Alerts · ${symbol}`}
-        onClose={() => setDrawer(null)}
-      >
-        <SymbolAlerts key={`al-${symbol}`} symbol={symbol} embedded />
+        <SymbolNotifications symbol={symbol} />
       </Drawer>
     </div>
   );

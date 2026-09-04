@@ -14,6 +14,7 @@ import {
   disconnectFreetrade,
 } from "../lib/queries";
 import { formatDateTime } from "../lib/dates";
+import { describeRule, describeRuleDetail } from "../lib/alertText";
 import { authClient } from "../lib/auth";
 import { AUTH_ENABLED } from "../lib/features";
 import { usePreferences, useResetPreferences, useSavePreferences } from "../lib/preferences";
@@ -33,10 +34,9 @@ import { QUOTE_REFRESH_CHOICES } from "@trader/shared";
 const SECTIONS = [
   ["account", "Account"],
   ["display", "Display"],
-  ["alerts", "Alerts"],
+  ["alerts", "Notifications"],
   ["intelligence", "Intelligence"],
   ["data", "Data"],
-  ["channels", "Channels"],
 ] as const;
 
 const CHART_RANGES: Array<[HistoryRange, string]> = [
@@ -146,10 +146,6 @@ function Toggle({
 }
 
 
-function fmtRuleKind(kind: string, threshold: number, enabled: boolean) {
-  const pct = kind.startsWith("pct_") ? "%" : "";
-  return `${kind} ${threshold}${pct}${enabled ? "" : " · off"}`;
-}
 
 function fmtNum(n: number | null | undefined, digits = 2) {
   if (n == null || Number.isNaN(n)) return "—";
@@ -638,8 +634,8 @@ export function SettingsPage() {
 
           <Section
             id="alerts"
-            title="Alerts"
-            lead="Defaults for new rules, and every rule you already have."
+            title="Notifications"
+            lead="Rules decide when you hear about a stock; deliveries decide where the message goes. Both are set per stock from its Notify me drawer — this is everything you have, in one place."
           >
             <AlertDefaults />
 
@@ -650,13 +646,10 @@ export function SettingsPage() {
                   <div className="card-row">
                     <div>
                       <div className="settings-card-title">
-                        {rule.symbol} · {fmtRuleKind(rule.kind, rule.threshold, rule.enabled)}
+                        {rule.symbol} · {describeRule(rule)}
+                        {rule.enabled ? "" : " · off"}
                       </div>
-                      <div className="muted">
-                        baseline {rule.baseline}
-                        {rule.baselineWindowDays ? ` (${rule.baselineWindowDays}d)` : ""} ·
-                        cooldown {rule.cooldownMinutes}m · {rule.channelIds.length} channel(s)
-                      </div>
+                      <div className="muted">{describeRuleDetail(rule)}</div>
                     </div>
                     <div className="settings-card-actions">
                       <button
@@ -684,39 +677,7 @@ export function SettingsPage() {
               )}
             </div>
 
-            <h3 className="settings-sub">Recent firings</h3>
-            <div className="card-list">
-              {(events.data as AlertEvent[] | undefined)?.slice(0, 10).map((ev) => (
-                <div className="card" key={ev.id}>
-                  <div className="settings-card-title">
-                    {ev.symbol} · {fmtNum(ev.price)}
-                  </div>
-                  <div className="muted">
-                    {ev.message} · {ev.status} · {formatDateTime(ev.createdAt)}
-                  </div>
-                </div>
-              ))}
-              {!events.data?.length && <div className="muted">No alerts have fired yet.</div>}
-            </div>
-          </Section>
-
-          <Section
-            id="intelligence"
-            title="Intelligence"
-            lead="What the scoring and the assistant are allowed to spend a model call on."
-          >
-            <IntelligenceSection />
-          </Section>
-
-          <Section id="data" title="Data" lead="Where your positions come from.">
-            <FreetradeSection />
-          </Section>
-
-          <Section
-            id="channels"
-            title="Channels"
-            lead="Where a firing alert is delivered. Add one from a stock's drawer."
-          >
+            <h3 className="settings-sub">Delivery</h3>
             <div className="card-list">
               {(channels.data as NotificationChannel[] | undefined)?.map((ch) => (
                 <div className="card" key={ch.id}>
@@ -759,7 +720,35 @@ export function SettingsPage() {
                 <div className="muted">No channels yet.</div>
               )}
             </div>
+
+            <h3 className="settings-sub">Recent firings</h3>
+            <div className="card-list">
+              {(events.data as AlertEvent[] | undefined)?.slice(0, 10).map((ev) => (
+                <div className="card" key={ev.id}>
+                  <div className="settings-card-title">
+                    {ev.symbol} · {fmtNum(ev.price)}
+                  </div>
+                  <div className="muted">
+                    {ev.message} · {ev.status} · {formatDateTime(ev.createdAt)}
+                  </div>
+                </div>
+              ))}
+              {!events.data?.length && <div className="muted">No alerts have fired yet.</div>}
+            </div>
           </Section>
+
+          <Section
+            id="intelligence"
+            title="Intelligence"
+            lead="What the scoring and the assistant are allowed to spend a model call on."
+          >
+            <IntelligenceSection />
+          </Section>
+
+          <Section id="data" title="Data" lead="Where your positions come from.">
+            <FreetradeSection />
+          </Section>
+
         </div>
       </div>
     </div>

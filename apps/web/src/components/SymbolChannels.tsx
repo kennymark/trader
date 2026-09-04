@@ -1,5 +1,4 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import { authClient } from "../lib/auth";
 import { AUTH_ENABLED } from "../lib/features";
@@ -19,7 +18,6 @@ type Props = {
 
 export function SymbolChannels({ symbol, embedded = false }: Props) {
   const qc = useQueryClient();
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { data: session, isPending: sessionPending } = authClient.useSession();
   const isAuthed = !AUTH_ENABLED || Boolean(session?.user);
 
@@ -65,43 +63,12 @@ export function SymbolChannels({ symbol, embedded = false }: Props) {
     onSuccess: (data) => setTelegramLink(data.deepLink),
   });
 
-  if (AUTH_ENABLED && sessionPending) {
-    return (
-      <section className={embedded ? "symbol-alerts" : undefined}>
-        <div className="muted">Loading…</div>
-      </section>
-    );
-  }
-
-  if (AUTH_ENABLED && !isAuthed) {
-    return (
-      <section className={embedded ? "symbol-alerts" : undefined}>
-        {embedded && <h2 className="symbol-alerts-title">Channels</h2>}
-        <p className="muted" style={{ marginTop: 0 }}>
-          Sign in to connect notification channels for {symbol}.
-        </p>
-        <Link to="/login" className="btn btn-primary" search={{ next: pathname }}>
-          Sign in
-        </Link>
-      </section>
-    );
-  }
-
   const symbolChannels = (channels.data || []).filter((c) =>
     channelMatchesSymbol(c.symbol, symbol),
   );
 
   return (
     <section className={embedded ? "symbol-alerts" : undefined}>
-      {embedded ? (
-        <h2 className="symbol-alerts-title">Channels for {symbol}</h2>
-      ) : (
-        <h2 style={{ marginTop: 0, fontSize: "1.05rem" }}>Channels for {symbol}</h2>
-      )}
-      <p className="muted" style={{ marginTop: 0 }}>
-        Connect email, Telegram, or Twist for this stock. Alerts can only notify channels
-        attached here.
-      </p>
 
       <div className="card-list" style={{ marginBottom: "1.25rem" }}>
         {symbolChannels.map((ch) => (

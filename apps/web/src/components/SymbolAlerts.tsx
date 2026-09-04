@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import type { AlertBaseline, AlertKind } from "@trader/shared";
 import { authClient } from "../lib/auth";
 import { AUTH_ENABLED } from "../lib/features";
 import { channelMatchesSymbol } from "../lib/channelSymbol";
+import { describeRule, describeRuleDetail } from "../lib/alertText";
 import { usePreferences } from "../lib/preferences";
 import {
   createAlert,
@@ -22,7 +22,6 @@ type Props = {
 
 export function SymbolAlerts({ symbol, embedded = false }: Props) {
   const qc = useQueryClient();
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { data: session, isPending: sessionPending } = authClient.useSession();
   const isAuthed = !AUTH_ENABLED || Boolean(session?.user);
 
@@ -69,28 +68,6 @@ export function SymbolAlerts({ symbol, embedded = false }: Props) {
     );
   };
 
-  if (AUTH_ENABLED && sessionPending) {
-    return (
-      <section className={embedded ? "symbol-alerts" : undefined}>
-        <div className="muted">Loading…</div>
-      </section>
-    );
-  }
-
-  if (AUTH_ENABLED && !isAuthed) {
-    return (
-      <section className={embedded ? "symbol-alerts" : undefined}>
-        {embedded && <h2 className="symbol-alerts-title">Alerts</h2>}
-        <p className="muted" style={{ marginTop: 0 }}>
-          Sign in to create price alerts for {symbol}.
-        </p>
-        <Link to="/login" className="btn btn-primary" search={{ next: pathname }}>
-          Sign in
-        </Link>
-      </section>
-    );
-  }
-
   const symbolRules = (alerts.data || []).filter(
     (r) => r.symbol.toUpperCase() === symbol.toUpperCase(),
   );
@@ -100,11 +77,6 @@ export function SymbolAlerts({ symbol, embedded = false }: Props) {
 
   return (
     <section className={embedded ? "symbol-alerts" : undefined}>
-      {embedded ? (
-        <h2 className="symbol-alerts-title">Alerts for {symbol}</h2>
-      ) : (
-        <h2 style={{ marginTop: 0, fontSize: "1.05rem" }}>New alert for {symbol}</h2>
-      )}
 
       <div className="form-grid">
         <div className="field">
@@ -160,7 +132,7 @@ export function SymbolAlerts({ symbol, embedded = false }: Props) {
 
       <div style={{ marginBottom: "1rem" }}>
         <div className="stat-label" style={{ marginBottom: "0.5rem" }}>
-          Channels for {symbol}
+          Deliver to
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
           {enabledChannels.map((c) => (
@@ -176,7 +148,8 @@ export function SymbolAlerts({ symbol, embedded = false }: Props) {
           ))}
           {!enabledChannels.length && (
             <span className="muted">
-              Add a channel for {symbol} in the Channels section above first.
+              No delivery set up for {symbol} yet — add one under Delivery below, then a rule
+              has somewhere to send.
             </span>
           )}
         </div>
@@ -212,15 +185,12 @@ export function SymbolAlerts({ symbol, embedded = false }: Props) {
           <div className="card" key={rule.id}>
             <div className="card-row">
               <div>
-                <div style={{ fontWeight: 600, fontFamily: "var(--mono)" }}>
-                  {rule.kind} {rule.threshold}
-                  {rule.kind.startsWith("pct_") ? "%" : ""}
+                <div style={{ fontWeight: 600 }}>
+                  {describeRule(rule)}
                   {!rule.enabled ? " · off" : ""}
                 </div>
                 <div className="muted">
-                  baseline {rule.baseline}
-                  {rule.baselineWindowDays ? ` (${rule.baselineWindowDays}d)` : ""} · cooldown{" "}
-                  {rule.cooldownMinutes}m · {rule.channelIds.length} channel(s)
+                  {describeRuleDetail(rule)}
                   {rule.lastTriggeredAt
                     ? ` · last fired ${new Date(rule.lastTriggeredAt).toLocaleString()}`
                     : ""}
