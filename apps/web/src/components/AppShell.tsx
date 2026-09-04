@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { authClient } from "../lib/auth";
+import { SymbolSearch } from "./SymbolSearch";
 import { AUTH_ENABLED } from "../lib/features";
 
 type Props = {
@@ -84,7 +85,7 @@ export function AppShell({ user, children }: Props) {
 
       <div className="app-main">
         <header className="app-topbar">
-          <div className="app-search muted">Search stocks on Watchlist · The Hunt scores your list</div>
+          <SymbolSearch />
         </header>
         <main className="app-content">{children}</main>
       </div>

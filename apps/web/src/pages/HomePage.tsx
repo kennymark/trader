@@ -1,7 +1,11 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ChartPane } from "../components/ChartPane";
 import { WatchlistPane } from "../components/WatchlistPane";
-import { readSelectedSymbol, writeSelectedSymbol } from "../lib/selectedSymbol";
+import {
+  readSelectedSymbol,
+  subscribeSelectedSymbol,
+  writeSelectedSymbol,
+} from "../lib/selectedSymbol";
 
 export function HomePage() {
   const [selected, setSelected] = useState<string | null>(() => readSelectedSymbol());
@@ -11,6 +15,9 @@ export function HomePage() {
     setSelected(next);
     writeSelectedSymbol(next);
   }
+
+  // The navbar search selects a symbol from outside this page.
+  useEffect(() => subscribeSelectedSymbol((next) => setSelected(next)), []);
 
   /**
    * Open the first symbol once the list arrives. The chart pane is the largest

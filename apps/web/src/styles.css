@@ -4018,3 +4018,146 @@ select {
 .stats-grid {
   gap: 0.5rem 1.5rem;
 }
+
+/* --- the navbar search ---------------------------------------------------- */
+
+.navsearch {
+  position: relative;
+  flex: 1;
+  max-width: 520px;
+}
+
+.navsearch-field {
+  position: relative;
+}
+
+.navsearch input {
+  width: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  border: 0;
+  border-bottom: 2px solid var(--border);
+  border-radius: 0;
+  padding: 0.4rem 0.1rem;
+  font-size: 0.95rem;
+}
+
+.navsearch input::placeholder {
+  color: var(--text-muted);
+}
+
+.navsearch input:hover {
+  border-bottom-color: var(--text-muted);
+}
+
+.navsearch input:focus,
+.navsearch input:focus-visible {
+  outline: none;
+  border-bottom-color: var(--ink);
+  background: var(--bg);
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.navsearch-error {
+  margin: 0.3rem 0 0;
+  font-size: 0.8rem;
+  color: var(--down);
+}
+
+/* The suggestion sheet drops from the field: ruled rows, no card. */
+.navsearch .symbol-suggestions {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: var(--bg);
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  max-height: 340px;
+  overflow-y: auto;
+  box-shadow: none;
+}
+
+.navsearch .symbol-suggestion {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.45rem 0.6rem;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.navsearch .symbol-suggestion:last-child {
+  border-bottom: 0;
+}
+
+.navsearch .symbol-suggestion.active,
+.navsearch .symbol-suggestion:hover {
+  background: var(--bg-elevated);
+}
+
+.navsearch .symbol-suggestion-ticker {
+  font-weight: 700;
+  min-width: 4.5rem;
+}
+
+.navsearch .symbol-suggestion-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  min-width: 0;
+}
+
+.navsearch .symbol-suggestion-name {
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.navsearch .symbol-suggestion-exch {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* The topbar carries the search again, so it returns at every width. */
+@media (max-width: 640px) {
+  .app-topbar {
+    display: flex;
+    padding: 0.6rem 1rem;
+  }
+}
+
+/* The base row stacks its parts; in the navbar the ticker leads the line so a
+   list of near-identical tickers stays scannable. */
+.navsearch .symbol-suggestion {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 0.7rem;
+  padding: 0.4rem 0.6rem;
+}
+
+.navsearch .symbol-suggestion-meta {
+  flex: 1;
+}
+
+/* The topbar carried a backdrop blur, which is decoration and, worse, a
+   stacking context that trapped the suggestion sheet behind the page. */
+.app-topbar {
+  position: relative;
+  z-index: 50;
+  background: var(--bg);
+  backdrop-filter: none;
+  border-bottom: 1px solid var(--border);
+}
