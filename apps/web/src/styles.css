@@ -3945,3 +3945,31 @@ select {
   fill: rgb(var(--accent-rgb) / 0.06);
   stroke: none;
 }
+
+/* --- verdict-pass regressions ------------------------------------------- */
+
+/* (a) With the search hidden and the Settings duplicate gone, the topbar had
+   nothing left to carry: an empty ruled band competing with the masthead
+   rule directly below it. */
+@media (max-width: 640px) {
+  .app-topbar {
+    display: none;
+  }
+}
+
+/* (b) One device, one alignment: the figure flushes right on every account
+   line, including where the leader is suppressed. */
+.account-line > :last-child {
+  margin-left: auto;
+}
+
+@media (max-width: 640px) {
+  .pnl-winloss .account-line .account-line-leader {
+    display: none;
+  }
+
+  .pnl-winloss .account-line > :last-child {
+    margin-left: auto;
+    text-align: right;
+  }
+}

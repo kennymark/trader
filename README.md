@@ -6,6 +6,10 @@ Track a watchlist, import your broker history, and find out what your selling ac
 
 Guests can browse market data and search; a portfolio needs a sign-in. Auth is Better Auth running inside Convex, using email and password.
 
+The interface is a statement of account rather than a trading terminal: statutory
+paper, black ink on white, and colour reserved for profit and loss. See
+[DESIGN.md](DESIGN.md).
+
 ![Watchlist and chart](docs/screenshots/watchlist.png)
 
 ## Highlights
