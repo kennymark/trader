@@ -13,12 +13,31 @@ import authConfig from "./auth.config";
  */
 const siteUrl = process.env.SITE_URL ?? "http://localhost:5173";
 
+/**
+ * Origins allowed to call the auth endpoints. Vite silently moves to the next
+ * free port when 5173 is taken, and an untrusted origin fails as an opaque CORS
+ * error rather than a useful message, so the usual dev ports are trusted too.
+ * TRUSTED_ORIGINS adds more as a comma-separated list.
+ */
+const trustedOrigins = [
+  ...new Set([
+    siteUrl,
+    ...(siteUrl.includes("localhost")
+      ? ["http://localhost:5173", "http://localhost:5174", "http://localhost:5175"]
+      : []),
+    ...(process.env.TRUSTED_ORIGINS ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean),
+  ]),
+];
+
 export const authComponent = createClient<DataModel>(components.betterAuth);
 
 export const createAuth = (ctx: GenericCtx<DataModel>) =>
   betterAuth({
     baseURL: process.env.CONVEX_SITE_URL,
-    trustedOrigins: [siteUrl],
+    trustedOrigins,
     database: authComponent.adapter(ctx),
     emailAndPassword: {
       enabled: true,

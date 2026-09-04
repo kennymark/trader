@@ -9,6 +9,8 @@ export default defineConfig({
   plugins: [react()],
   envDir: repoRoot,
   server: {
+    // Fail loudly instead of drifting to another port, which breaks the auth origin check.
     port: 5173,
+    strictPort: true,
   },
 });
