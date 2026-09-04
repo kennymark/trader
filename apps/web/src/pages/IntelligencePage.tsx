@@ -10,6 +10,7 @@ import type {
   PredictionDashboard,
   Quote,
 } from "@trader/shared";
+import { formatDate } from "../lib/dates";
 import { AUTH_ENABLED } from "../lib/features";
 import { getGuestSymbols } from "../lib/guestWatchlist";
 import { authClient } from "../lib/auth";
@@ -477,6 +478,22 @@ export function CatalystCalendar({ items }: { items: CatalystEvent[] }) {
   );
 }
 
+const TRACK_EXPLAINER =
+  "Every Hunt refresh records what it thinks, with the price that day. Each call is then graded against what the price actually did, a week later and again at a month, three months, six months and a year.";
+
+function horizonLabel(days: number): string {
+  if (days >= 365) return "1 year";
+  if (days >= 180) return "6 months";
+  if (days >= 90) return "3 months";
+  if (days >= 30) return "1 month";
+  return "1 week";
+}
+
+function returnClass(pct: number | null | undefined): string {
+  if (pct == null) return "";
+  return pct >= 0 ? "change-up" : "change-down";
+}
+
 export function PredictionsPanel({
   data,
   onRefreshHunt,
@@ -488,30 +505,25 @@ export function PredictionsPanel({
 }) {
   if (!data.total) {
     return (
-      <div className="hunt-track-panel">
-        <div className="hunt-feed-head">
-          <div>
-            <h2>Track record</h2>
-            <p className="muted">
-              How Hunt signals perform over 7d → 1y. Predictions are saved when you refresh The Hunt.
-            </p>
-          </div>
-        </div>
+      <div className="track">
+        <header className="track-head">
+          <h2>Track record</h2>
+          <p className="muted">{TRACK_EXPLAINER}</p>
+        </header>
         <div className="hunt-feed-empty">
-          <div className="hunt-feed-empty-title">No tracked theses yet</div>
+          <div className="hunt-feed-empty-title">Nothing scored yet</div>
           <p className="muted">
-            Run a Hunt refresh to snapshot opportunity scores, entry prices, and targets. We’ll
-            score them automatically as each horizon comes due.
+            Refresh The Hunt to record what it thinks today. Nothing is graded until the first
+            horizon comes due a week later.
           </p>
           {onRefreshHunt ? (
             <button
               type="button"
-              className="btn btn-primary"
-              style={{ marginTop: "0.85rem" }}
+              className="btn btn-primary track-empty-action"
               disabled={refreshing}
               onClick={onRefreshHunt}
             >
-              {refreshing ? "Scanning…" : "Refresh The Hunt & start tracking"}
+              {refreshing ? "Scanning…" : "Refresh The Hunt and start recording"}
             </button>
           ) : null}
         </div>
@@ -519,156 +531,116 @@ export function PredictionsPanel({
     );
   }
 
+  // `evaluated` counts graded checkpoints, not calls, so the sentence has to
+  // name the unit or it reads as "23 of 14".
+  const checkTotal = data.predictions.reduce((acc, p) => acc + p.evaluations.length, 0);
+  const pendingTotal = checkTotal - data.evaluated;
+
   return (
-    <div className="hunt-track-panel">
-      <div className="hunt-feed-head">
-        <div>
-          <h2>Track record</h2>
-          <p className="muted">
-            Saved theses with entry price & target — evaluated at 7 / 30 / 90 / 180 / 365 days.
-          </p>
-        </div>
-        <div className="hunt-feed-count tabular">{data.total} theses</div>
+    <div className="track">
+      <header className="track-head">
+        <h2>Track record</h2>
+        <p className="muted">{TRACK_EXPLAINER}</p>
+      </header>
+
+      {/* One sentence carries what four unlabelled tiles used to imply badly. */}
+      <p className="track-summary">
+        <strong>{data.total}</strong> {data.total === 1 ? "call" : "calls"} recorded, each
+        checked at five dates. <strong>{data.evaluated}</strong> of those{" "}
+        <strong>{checkTotal}</strong> checks have been graded; {pendingTotal} are still waiting
+        on their date. Of the graded ones,{" "}
+        <strong>{data.hitRatePct != null ? `${data.hitRatePct}%` : "—"}</strong> reached the
+        target, and the average move since the call was{" "}
+        <strong className={returnClass(data.avgReturnPct)}>{fmtPct(data.avgReturnPct)}</strong>.
+      </p>
+
+      {data.evaluated > 0 && data.evaluated < 10 ? (
+        <p className="track-caveat">
+          Too few grades to mean much yet — read this as a log, not a score.
+        </p>
+      ) : null}
+
+      <h3 className="track-sub">By how long the call was given</h3>
+      <div className="intel-table-wrap">
+        <table className="intel-table track-table">
+          <thead>
+            <tr>
+              <th>Horizon</th>
+              <th className="num">Graded</th>
+              <th className="num">Avg move</th>
+              <th className="num">Reached target</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.byHorizon.map((h) => (
+              <tr key={h.horizonDays}>
+                <td>{horizonLabel(h.horizonDays)}</td>
+                <td className="num tabular">{h.count || "—"}</td>
+                <td className={`num tabular ${returnClass(h.avgReturnPct)}`}>
+                  {fmtPct(h.avgReturnPct)}
+                </td>
+                <td className="num tabular">
+                  {h.hitRatePct != null ? `${h.hitRatePct}%` : "—"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      <div className="hunt-track-stats">
-        <div className="hunt-track-stat">
-          <div className="stat-label">Tracked</div>
-          <div className="hunt-track-stat-value tabular">{data.total}</div>
-        </div>
-        <div className="hunt-track-stat">
-          <div className="stat-label">Evaluated points</div>
-          <div className="hunt-track-stat-value tabular">{data.evaluated}</div>
-        </div>
-        <div className="hunt-track-stat">
-          <div className="stat-label">Hit rate</div>
-          <div className="hunt-track-stat-value tabular">
-            {data.hitRatePct != null ? `${data.hitRatePct}%` : "—"}
-          </div>
-        </div>
-        <div className="hunt-track-stat">
-          <div className="stat-label">Avg return</div>
-          <div
-            className={`hunt-track-stat-value tabular ${
-              (data.avgReturnPct ?? 0) >= 0 ? "change-up" : "change-down"
-            }`}
-          >
-            {fmtPct(data.avgReturnPct)}
-          </div>
-        </div>
-      </div>
-
-      <div className="hunt-track-horizons">
-        {data.byHorizon.map((h) => (
-          <div key={h.horizonDays} className="hunt-track-horizon">
-            <div className="stat-label">{h.horizonDays}d</div>
-            <div className="tabular">{h.count} evals</div>
-            <div className="muted">
-              {fmtPct(h.avgReturnPct)}
-              {h.hitRatePct != null ? ` · ${h.hitRatePct}% hit` : ""}
+      <h3 className="track-sub">Every call</h3>
+      <div className="track-list">
+        {data.predictions.map((p) => (
+          <article key={p.id} className="track-card">
+            <div className="track-card-head">
+              <span className="hunt-feed-symbol">{p.symbol}</span>
+              <span className={`hunt-feed-kind hunt-track-action-${p.action}`}>{p.action}</span>
+              <span className="muted">{formatDate(p.predictedAt)}</span>
             </div>
-          </div>
+
+            <p className="track-thesis">{p.thesis}</p>
+
+            {/* Prose, because these five numbers are a sentence, not a grid. */}
+            <p className="track-facts muted">
+              Entry <span className="tabular">{fmtPrice(p.priceAtPrediction)}</span>
+              {p.targetPrice != null ? (
+                <>
+                  , target <span className="tabular">{fmtPrice(p.targetPrice)}</span>
+                </>
+              ) : (
+                ", no target set"
+              )}{" "}
+              · opportunity <span className="tabular">{p.opportunityScore}</span>, conviction{" "}
+              <span className="tabular">{p.convictionScore}</span>
+            </p>
+
+            <div className="track-marks">
+              {p.evaluations.map((e) => (
+                <div
+                  key={e.horizonDays}
+                  className={`track-mark ${e.evaluatedAt ? "done" : "pending"}`}
+                >
+                  <div className="track-mark-when">{horizonLabel(e.horizonDays)}</div>
+                  {e.evaluatedAt ? (
+                    <>
+                      <div className={`track-mark-value tabular ${returnClass(e.returnPct)}`}>
+                        {fmtPct(e.returnPct)}
+                      </div>
+                      <div className="track-mark-note">
+                        {e.hitTarget == null ? "—" : e.hitTarget ? "reached target" : "short of target"}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="track-mark-value muted">—</div>
+                      <div className="track-mark-note">grades {formatDate(e.dueAt)}</div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          </article>
         ))}
-      </div>
-
-      <div className="hunt-track-list">
-        {data.predictions.map((p) => {
-          const pending = p.evaluations.filter((e) => !e.evaluatedAt).length;
-          const done = p.evaluations.filter((e) => e.evaluatedAt).length;
-          const lastEval = [...p.evaluations]
-            .reverse()
-            .find((e) => e.evaluatedAt != null);
-          return (
-            <article key={p.id} className="hunt-track-card">
-              <div className="hunt-track-card-top">
-                <div>
-                  <div className="hunt-track-card-meta">
-                    <span className="hunt-feed-symbol">{p.symbol}</span>
-                    <span className={`hunt-feed-kind hunt-track-action-${p.action}`}>
-                      {p.action}
-                    </span>
-                    <span className="muted hunt-feed-time">
-                      {new Date(p.predictedAt).toLocaleString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
-                  <h3 className="hunt-cal-title">{p.thesis}</h3>
-                </div>
-                <div className="hunt-track-scores">
-                  <div>
-                    <div className="stat-label">Opp</div>
-                    <div className="tabular">{p.opportunityScore}</div>
-                  </div>
-                  <div>
-                    <div className="stat-label">Conv</div>
-                    <div className="tabular">{p.convictionScore}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="hunt-track-prices">
-                <div>
-                  <div className="stat-label">Entry</div>
-                  <div className="tabular">{fmtPrice(p.priceAtPrediction)}</div>
-                </div>
-                <div>
-                  <div className="stat-label">Target</div>
-                  <div className="tabular">{fmtPrice(p.targetPrice)}</div>
-                </div>
-                <div>
-                  <div className="stat-label">Status</div>
-                  <div>
-                    {done === 0
-                      ? `${pending} horizons pending`
-                      : lastEval?.returnPct != null
-                        ? `${fmtPct(lastEval.returnPct)} latest`
-                        : `${done} evaluated`}
-                  </div>
-                </div>
-              </div>
-
-              <div className="hunt-track-eval-row">
-                {p.evaluations.map((e) => (
-                  <div
-                    key={e.horizonDays}
-                    className={`hunt-track-eval ${e.evaluatedAt ? "done" : "pending"}`}
-                  >
-                    <div className="stat-label">{e.horizonDays}d</div>
-                    {e.evaluatedAt ? (
-                      <>
-                        <div
-                          className={`tabular ${
-                            (e.returnPct ?? 0) >= 0 ? "change-up" : "change-down"
-                          }`}
-                        >
-                          {fmtPct(e.returnPct)}
-                        </div>
-                        <div className="muted">
-                          {e.hitTarget == null ? "—" : e.hitTarget ? "Hit" : "Miss"}
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="muted">Pending</div>
-                        <div className="muted" style={{ fontSize: "0.72rem" }}>
-                          due{" "}
-                          {new Date(e.dueAt).toLocaleDateString(undefined, {
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </article>
-          );
-        })}
       </div>
     </div>
   );
