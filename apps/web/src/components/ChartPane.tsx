@@ -6,7 +6,6 @@ import { Drawer } from "./Drawer";
 import { PriceChart } from "./PriceChart";
 import { SymbolAlerts } from "./SymbolAlerts";
 import { SymbolChannels } from "./SymbolChannels";
-import { SymbolIntelligence } from "./SymbolIntelligence";
 
 const RANGES: HistoryRange[] = ["1d", "7d", "1m", "3m", "1y", "5y", "max"];
 
@@ -14,7 +13,7 @@ type Props = {
   symbol: string | null;
 };
 
-type DrawerKind = "alerts" | "channels" | "intelligence" | null;
+type DrawerKind = "alerts" | "channels" | null;
 
 function fmtPct(n: number | null | undefined) {
   if (n == null || Number.isNaN(n)) return "—";
@@ -70,13 +69,6 @@ export function ChartPane({ symbol }: Props) {
             ))}
           </div>
           <div className="symbol-drawer-triggers">
-            <button
-              type="button"
-              className={`btn ${drawer === "intelligence" ? "btn-primary" : ""}`}
-              onClick={() => setDrawer("intelligence")}
-            >
-              Intelligence
-            </button>
             <button
               type="button"
               className={`btn ${drawer === "channels" ? "btn-primary" : ""}`}
@@ -144,15 +136,6 @@ export function ChartPane({ symbol }: Props) {
           </div>
         )}
       </section>
-
-      <Drawer
-        open={drawer === "intelligence"}
-        title={`Intelligence · ${symbol}`}
-        onClose={() => setDrawer(null)}
-        size="wide"
-      >
-        <SymbolIntelligence key={`intel-${symbol}`} symbol={symbol} embedded />
-      </Drawer>
 
       <Drawer
         open={drawer === "channels"}

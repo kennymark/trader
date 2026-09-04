@@ -12,9 +12,16 @@ type Props = {
   onSelect: (symbol: string) => void;
   /** Lets the page open the first symbol so the chart pane is never a blank void. */
   onSymbolsLoaded?: (symbols: string[]) => void;
+  /** Opportunity score per symbol: the hunt now rides the list rather than a page. */
+  scores?: Map<string, number>;
 };
 
-export function WatchlistPane({ selectedSymbol, onSelect, onSymbolsLoaded }: Props) {
+export function WatchlistPane({
+  selectedSymbol,
+  onSelect,
+  onSymbolsLoaded,
+  scores,
+}: Props) {
   const qc = useQueryClient();
   const { data: session, isPending: sessionPending } = authClient.useSession();
   const isAuthed = !AUTH_ENABLED || Boolean(session?.user);
@@ -120,6 +127,7 @@ export function WatchlistPane({ selectedSymbol, onSelect, onSymbolsLoaded }: Pro
                 item={item}
                 quote={quoteMap.get(item.symbol)}
                 active={selectedSymbol === item.symbol}
+                score={scores?.get(item.symbol)}
                 onSelect={() => onSelect(item.symbol)}
                 onRemove={() => removeItem(item)}
               />
@@ -135,12 +143,14 @@ function StockRow({
   item,
   quote,
   active,
+  score,
   onSelect,
   onRemove,
 }: {
   item: WatchlistItem;
   quote?: Quote;
   active: boolean;
+  score?: number;
   onSelect: () => void;
   onRemove: () => void;
 }) {
@@ -155,10 +165,15 @@ function StockRow({
           <div className="stock-name">{item.displayName || quote?.shortName || "—"}</div>
         </div>
         <div className="stock-price">
-          <div>{quote?.price != null ? quote.price.toFixed(2) : "—"}</div>
-          <div className={pctClass}>
+          <div className="tabular">
+            {quote?.price != null ? quote.price.toFixed(2) : "—"}
+          </div>
+          <div className={`tabular ${pctClass}`}>
             {pct != null ? `${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%` : "—"}
           </div>
+        </div>
+        <div className="stock-score" title="Opportunity score">
+          {score != null ? <span className="tabular">{score}</span> : null}
         </div>
       </button>
       <button

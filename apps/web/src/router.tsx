@@ -3,6 +3,7 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  redirect,
   Link,
   useRouterState,
 } from "@tanstack/react-router";
@@ -17,7 +18,6 @@ import { AUTH_ENABLED } from "./lib/features";
 import { clearGuestWatchlist, getGuestSymbols } from "./lib/guestWatchlist";
 import { syncWatchlist } from "./lib/queries";
 import { HomePage } from "./pages/HomePage";
-import { IntelligencePage } from "./pages/IntelligencePage";
 import { PortfolioPage } from "./pages/PortfolioPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -198,10 +198,13 @@ const settingsRoute = createRoute({
   },
 });
 
+// The Hunt merged into the watchlist; keep the path working for old links.
 const intelligenceRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/intelligence",
-  component: IntelligencePage,
+  beforeLoad: () => {
+    throw redirect({ to: "/" });
+  },
 });
 
 const portfolioRoute = createRoute({

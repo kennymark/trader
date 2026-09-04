@@ -198,7 +198,7 @@ function relativeTime(iso: string) {
   });
 }
 
-function FeedList({ items }: { items: FeedItem[] }) {
+export function FeedList({ items }: { items: FeedItem[] }) {
   const [kindFilter, setKindFilter] = useState<FeedItem["kind"] | "all">("all");
 
   const counts = useMemo(() => {
@@ -327,7 +327,7 @@ function dateGroupKey(iso: string | null) {
   return d.toISOString().slice(0, 10);
 }
 
-function CatalystCalendar({ items }: { items: CatalystEvent[] }) {
+export function CatalystCalendar({ items }: { items: CatalystEvent[] }) {
   const [kindFilter, setKindFilter] = useState<CatalystEvent["kind"] | "all">("all");
 
   const counts = useMemo(() => {
@@ -477,7 +477,7 @@ function CatalystCalendar({ items }: { items: CatalystEvent[] }) {
   );
 }
 
-function PredictionsPanel({
+export function PredictionsPanel({
   data,
   onRefreshHunt,
   refreshing,
