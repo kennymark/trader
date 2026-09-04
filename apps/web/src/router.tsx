@@ -14,9 +14,10 @@ import { authClient } from "./lib/auth";
 import { AUTH_ENABLED } from "./lib/features";
 import { clearGuestWatchlist, getGuestSymbols } from "./lib/guestWatchlist";
 import { syncWatchlist } from "./lib/queries";
-import { AlertsPage } from "./pages/AlertsPage";
-import { ChannelsPage } from "./pages/ChannelsPage";
 import { HomePage } from "./pages/HomePage";
+import { IntelligencePage } from "./pages/IntelligencePage";
+import { PortfolioPage } from "./pages/PortfolioPage";
+import { SettingsPage } from "./pages/SettingsPage";
 import { LoginPage } from "./pages/LoginPage";
 
 const queryClient = new QueryClient({
@@ -181,33 +182,33 @@ const indexRoute = createRoute({
   component: HomePage,
 });
 
-const alertsRoute = createRoute({
+const settingsRoute = createRoute({
   getParentRoute: () => appRoute,
-  path: "/alerts",
-  component: function AlertsGate() {
+  path: "/settings",
+  component: function SettingsGate() {
     return (
       <RequireAuth>
-        <AlertsPage />
+        <SettingsPage />
       </RequireAuth>
     );
   },
 });
 
-const channelsRoute = createRoute({
+const intelligenceRoute = createRoute({
   getParentRoute: () => appRoute,
-  path: "/settings/channels",
-  component: function ChannelsGate() {
-    return (
-      <RequireAuth>
-        <ChannelsPage />
-      </RequireAuth>
-    );
-  },
+  path: "/intelligence",
+  component: IntelligencePage,
+});
+
+const portfolioRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/portfolio",
+  component: PortfolioPage,
 });
 
 const routeTree = rootRoute.addChildren([
   loginRoute,
-  appRoute.addChildren([indexRoute, alertsRoute, channelsRoute]),
+  appRoute.addChildren([indexRoute, intelligenceRoute, portfolioRoute, settingsRoute]),
 ]);
 
 export const router = createRouter({

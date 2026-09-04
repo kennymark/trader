@@ -6,47 +6,23 @@ import { Drawer } from "./Drawer";
 import { PriceChart } from "./PriceChart";
 import { SymbolAlerts } from "./SymbolAlerts";
 import { SymbolChannels } from "./SymbolChannels";
+import { SymbolIntelligence } from "./SymbolIntelligence";
 
-const RANGES: HistoryRange[] = ["1m", "3m", "1y", "5y", "max"];
-const SHOW_WHAT_IF_KEY = "trader:show-what-if";
+const RANGES: HistoryRange[] = ["1d", "7d", "1m", "3m", "1y", "5y", "max"];
 
 type Props = {
   symbol: string | null;
 };
 
-type DrawerKind = "alerts" | "channels" | null;
-
-function readShowWhatIf(): boolean {
-  try {
-    return localStorage.getItem(SHOW_WHAT_IF_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-function writeShowWhatIf(show: boolean) {
-  try {
-    localStorage.setItem(SHOW_WHAT_IF_KEY, show ? "1" : "0");
-  } catch {
-    // ignore quota / private-mode failures
-  }
-}
+type DrawerKind = "alerts" | "channels" | "intelligence" | null;
 
 function fmtPct(n: number | null | undefined) {
   if (n == null || Number.isNaN(n)) return "—";
   return `${n >= 0 ? "+" : ""}${n.toFixed(2)}%`;
 }
 
-function fmtMoney(n: number | null | undefined) {
-  if (n == null || Number.isNaN(n)) return "—";
-  return n.toLocaleString(undefined, { style: "currency", currency: "USD" });
-}
-
 export function ChartPane({ symbol }: Props) {
   const [range, setRange] = useState<HistoryRange>("1y");
-  const [amount, setAmount] = useState(1000);
-  const [dipPct, setDipPct] = useState(10);
-  const [showWhatIf, setShowWhatIf] = useState(readShowWhatIf);
   const [drawer, setDrawer] = useState<DrawerKind>(null);
 
   const history = useQuery({
@@ -57,8 +33,8 @@ export function ChartPane({ symbol }: Props) {
   });
 
   const analytics = useQuery({
-    queryKey: ["analytics", symbol, range, amount, dipPct],
-    queryFn: () => fetchAnalytics(symbol!, { range, amount, dipPct }),
+    queryKey: ["analytics", symbol, range],
+    queryFn: () => fetchAnalytics(symbol!, { range, amount: 1000, dipPct: 10 }),
     enabled: Boolean(symbol),
     staleTime: 5 * 60_000,
   });
@@ -68,7 +44,7 @@ export function ChartPane({ symbol }: Props) {
       <div className="pane-right">
         <div className="empty-state">
           <strong>Select a stock</strong>
-          <span>Pick a symbol from your watchlist to see history, alerts, and channels.</span>
+          <span>Pick a symbol from your watchlist to see history, intelligence, alerts, and channels.</span>
         </div>
       </div>
     );
@@ -94,6 +70,13 @@ export function ChartPane({ symbol }: Props) {
             ))}
           </div>
           <div className="symbol-drawer-triggers">
+            <button
+              type="button"
+              className={`btn ${drawer === "intelligence" ? "btn-primary" : ""}`}
+              onClick={() => setDrawer("intelligence")}
+            >
+              Intelligence
+            </button>
             <button
               type="button"
               className={`btn ${drawer === "channels" ? "btn-primary" : ""}`}
@@ -127,20 +110,6 @@ export function ChartPane({ symbol }: Props) {
       </div>
 
       <section className="analytics">
-        <div className="analytics-controls">
-          <div className="field">
-            <label htmlFor="dip">Dip threshold %</label>
-            <input
-              id="dip"
-              type="number"
-              min={1}
-              max={100}
-              value={dipPct}
-              onChange={(e) => setDipPct(Number(e.target.value) || 10)}
-            />
-          </div>
-        </div>
-
         {analytics.isError && (
           <div className="error-banner">{(analytics.error as Error).message}</div>
         )}
@@ -174,68 +143,16 @@ export function ChartPane({ symbol }: Props) {
             />
           </div>
         )}
-
-        <div className="what-if">
-          <button
-            type="button"
-            className="what-if-toggle"
-            aria-expanded={showWhatIf}
-            onClick={() => {
-              const next = !showWhatIf;
-              setShowWhatIf(next);
-              writeShowWhatIf(next);
-            }}
-          >
-            <span className="what-if-chevron" aria-hidden>
-              {showWhatIf ? "▾" : "▸"}
-            </span>
-            What-if
-          </button>
-
-          {showWhatIf && (
-            <div className="what-if-panel">
-              <div className="analytics-controls">
-                <div className="field">
-                  <label htmlFor="amount">Amount</label>
-                  <input
-                    id="amount"
-                    type="number"
-                    min={1}
-                    value={amount}
-                    onChange={(e) => setAmount(Number(e.target.value) || 1000)}
-                  />
-                </div>
-                <div className="field">
-                  <label htmlFor="preset">Quick amount</label>
-                  <select
-                    id="preset"
-                    value={amount === 1000 || amount === 10000 ? amount : ""}
-                    onChange={(e) => {
-                      if (e.target.value) setAmount(Number(e.target.value));
-                    }}
-                  >
-                    <option value="">Custom</option>
-                    <option value={1000}>$1,000</option>
-                    <option value={10000}>$10,000</option>
-                  </select>
-                </div>
-              </div>
-
-              {a && (
-                <div className="stats-grid">
-                  <Stat label="Ending value" value={fmtMoney(a.whatIf.endingValue)} />
-                  <Stat label="Profit" value={fmtMoney(a.whatIf.profit)} tone={a.whatIf.profit} />
-                  <Stat
-                    label="Profit %"
-                    value={fmtPct(a.whatIf.profitPct)}
-                    tone={a.whatIf.profitPct}
-                  />
-                </div>
-              )}
-            </div>
-          )}
-        </div>
       </section>
+
+      <Drawer
+        open={drawer === "intelligence"}
+        title={`Intelligence · ${symbol}`}
+        onClose={() => setDrawer(null)}
+        size="wide"
+      >
+        <SymbolIntelligence key={`intel-${symbol}`} symbol={symbol} embedded />
+      </Drawer>
 
       <Drawer
         open={drawer === "channels"}

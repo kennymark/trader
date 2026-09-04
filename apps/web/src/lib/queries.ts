@@ -2,12 +2,24 @@ import type {
   AlertEvent,
   AlertRule,
   AnalyticsResult,
+  BrokerConnection,
+  FreetradeImportResult,
   HistoryBar,
   HistoryRange,
+  IntelligenceResponse,
+  MarketCompareResult,
   NotificationChannel,
+  PortfolioHealth,
+  PortfolioHolding,
+  PortfolioPerformance,
+  PredictionDashboard,
   Quote,
+  ScenarioAssumptions,
+  ScenarioResult,
+  SymbolIntelligenceDetail,
   SymbolSearchResult,
   WatchlistItem,
+  WhatIfResult,
 } from "@trader/shared";
 import { api } from "./api";
 
@@ -96,3 +108,60 @@ export const deleteAlert = (id: string) =>
   api<{ ok: boolean }>(`/api/alerts/${id}`, { method: "DELETE" });
 
 export const fetchAlertEvents = () => api<AlertEvent[]>("/api/alerts/events");
+
+export const fetchIntelligence = (symbols?: string[]) => {
+  if (symbols && symbols.length > 0) {
+    return api<IntelligenceResponse>("/api/intelligence", {
+      method: "POST",
+      body: JSON.stringify({ symbols }),
+    });
+  }
+  return api<IntelligenceResponse>("/api/intelligence");
+};
+
+export const fetchSymbolIntelligence = (symbol: string) =>
+  api<SymbolIntelligenceDetail>(`/api/intelligence/${encodeURIComponent(symbol)}`);
+
+export const fetchPortfolioHealth = () =>
+  api<PortfolioHealth>("/api/intelligence/portfolio");
+
+export const fetchPredictions = () =>
+  api<PredictionDashboard>("/api/intelligence/predictions");
+
+export const simulateScenarios = (
+  symbol: string,
+  assumptions: Partial<ScenarioAssumptions>,
+) =>
+  api<ScenarioResult>("/api/intelligence/scenarios", {
+    method: "POST",
+    body: JSON.stringify({ symbol, assumptions }),
+  });
+
+export const fetchFreetrade = () =>
+  api<{ connection: BrokerConnection | null; holdings: PortfolioHolding[] }>(
+    "/api/brokers/freetrade",
+  );
+
+export const importFreetradeCsv = (csv: string, syncWatchlist = true) =>
+  api<FreetradeImportResult>("/api/brokers/freetrade/import", {
+    method: "POST",
+    body: JSON.stringify({ csv, syncWatchlist }),
+  });
+
+export const disconnectFreetrade = () =>
+  api<{ ok: boolean; deleted: boolean }>("/api/brokers/freetrade", {
+    method: "DELETE",
+  });
+
+export const fetchPortfolioPerformance = () =>
+  api<{ connection: BrokerConnection | null; performance: PortfolioPerformance | null }>(
+    "/api/portfolio/performance",
+  );
+
+export const fetchMarketCompare = () =>
+  api<{ connection: BrokerConnection | null; comparison: MarketCompareResult | null }>(
+    "/api/portfolio/vs-market",
+  );
+
+export const fetchWhatIf = (key: string) =>
+  api<WhatIfResult>(`/api/portfolio/what-if?key=${encodeURIComponent(key)}`);

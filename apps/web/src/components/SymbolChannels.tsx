@@ -29,6 +29,9 @@ export function SymbolChannels({ symbol, embedded = false }: Props) {
   const [twistToken, setTwistToken] = useState("");
   const [twistThread, setTwistThread] = useState("");
   const [telegramLink, setTelegramLink] = useState<string | null>(null);
+  const [draftChannel, setDraftChannel] = useState<"email" | "telegram" | "twist" | null>(
+    null,
+  );
 
   const channels = useQuery({
     queryKey: ["channels"],
@@ -141,113 +144,168 @@ export function SymbolChannels({ symbol, embedded = false }: Props) {
       </div>
 
       <div className="symbol-channel-forms">
-        <div className="card">
-          <h3 className="symbol-alerts-subtitle" style={{ marginTop: 0 }}>
+        <div className="channel-draft-toggles" aria-label="Add a new channel">
+          <button
+            type="button"
+            className={`btn ${draftChannel === "email" ? "btn-primary" : ""}`}
+            aria-pressed={draftChannel === "email"}
+            onClick={() =>
+              setDraftChannel((v) => (v === "email" ? null : "email"))
+            }
+          >
             Email
-          </h3>
-          <div className="form-grid">
-            <div className="field">
-              <label>Label</label>
-              <input value={emailLabel} onChange={(e) => setEmailLabel(e.target.value)} />
-            </div>
-            <div className="field">
-              <label>Address</label>
-              <input
-                value={emailAddress}
-                onChange={(e) => setEmailAddress(e.target.value)}
-                placeholder="you@example.com"
-              />
-            </div>
-          </div>
+          </button>
           <button
             type="button"
-            className="btn btn-primary"
-            disabled={!emailAddress.trim() || createMut.isPending}
+            className={`btn ${draftChannel === "telegram" ? "btn-primary" : ""}`}
+            aria-pressed={draftChannel === "telegram"}
             onClick={() =>
-              createMut.mutate({
-                type: "email",
-                label: emailLabel || `Email · ${symbol}`,
-                symbol,
-                config: { address: emailAddress.trim() },
-              })
+              setDraftChannel((v) => (v === "telegram" ? null : "telegram"))
             }
           >
-            Add email
-          </button>
-        </div>
-
-        <div className="card">
-          <h3 className="symbol-alerts-subtitle" style={{ marginTop: 0 }}>
             Telegram
-          </h3>
-          <p className="muted" style={{ marginTop: 0 }}>
-            Generate a link, open it in Telegram, and tap Start. The chat is saved for{" "}
-            {symbol}.
-          </p>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => telegramMut.mutate()}
-            disabled={telegramMut.isPending}
-          >
-            Generate Telegram link
           </button>
-          {telegramLink && (
-            <p style={{ marginTop: "0.75rem", marginBottom: 0 }}>
-              <a href={telegramLink} target="_blank" rel="noreferrer">
-                Open Telegram bot
-              </a>
-            </p>
-          )}
-          {telegramMut.isError && (
-            <div className="error-banner" style={{ marginTop: "0.75rem", marginLeft: 0, marginRight: 0 }}>
-              {(telegramMut.error as Error).message}
-            </div>
-          )}
-        </div>
-
-        <div className="card">
-          <h3 className="symbol-alerts-subtitle" style={{ marginTop: 0 }}>
-            Twist
-          </h3>
-          <div className="form-grid">
-            <div className="field">
-              <label>Label</label>
-              <input value={twistLabel} onChange={(e) => setTwistLabel(e.target.value)} />
-            </div>
-            <div className="field">
-              <label>Access token</label>
-              <input
-                value={twistToken}
-                onChange={(e) => setTwistToken(e.target.value)}
-                placeholder="Optional if TWIST_ACCESS_TOKEN set"
-              />
-            </div>
-            <div className="field">
-              <label>Thread / conversation ID</label>
-              <input value={twistThread} onChange={(e) => setTwistThread(e.target.value)} />
-            </div>
-          </div>
           <button
             type="button"
-            className="btn btn-primary"
-            disabled={!twistThread.trim() || createMut.isPending}
+            className={`btn ${draftChannel === "twist" ? "btn-primary" : ""}`}
+            aria-pressed={draftChannel === "twist"}
             onClick={() =>
-              createMut.mutate({
-                type: "twist",
-                label: twistLabel || `Twist · ${symbol}`,
-                symbol,
-                config: {
-                  accessToken: twistToken || undefined,
-                  conversationId: twistThread,
-                  threadId: twistThread,
-                },
-              })
+              setDraftChannel((v) => (v === "twist" ? null : "twist"))
             }
           >
-            Add Twist
+            Twist
           </button>
         </div>
+
+        {draftChannel === "email" && (
+          <div className="card">
+            <h3 className="symbol-alerts-subtitle" style={{ marginTop: 0 }}>
+              Email
+            </h3>
+            <div className="form-grid">
+              <div className="field">
+                <label>Label</label>
+                <input
+                  value={emailLabel}
+                  onChange={(e) => setEmailLabel(e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <label>Address</label>
+                <input
+                  value={emailAddress}
+                  onChange={(e) => setEmailAddress(e.target.value)}
+                  placeholder="you@example.com"
+                />
+              </div>
+            </div>
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={!emailAddress.trim() || createMut.isPending}
+              onClick={() =>
+                createMut.mutate({
+                  type: "email",
+                  label: emailLabel || `Email · ${symbol}`,
+                  symbol,
+                  config: { address: emailAddress.trim() },
+                })
+              }
+            >
+              Add email
+            </button>
+          </div>
+        )}
+
+        {draftChannel === "telegram" && (
+          <div className="card">
+            <h3 className="symbol-alerts-subtitle" style={{ marginTop: 0 }}>
+              Telegram
+            </h3>
+            <p className="muted" style={{ marginTop: 0 }}>
+              Generate a link, open it in Telegram, and tap Start. The chat is saved for{" "}
+              {symbol}.
+            </p>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => telegramMut.mutate()}
+              disabled={telegramMut.isPending}
+            >
+              Generate Telegram link
+            </button>
+            {telegramLink && (
+              <p style={{ marginTop: "0.75rem", marginBottom: 0 }}>
+                <a href={telegramLink} target="_blank" rel="noreferrer">
+                  Open Telegram bot
+                </a>
+              </p>
+            )}
+            {telegramMut.isError && (
+              <div
+                className="error-banner"
+                style={{
+                  marginTop: "0.75rem",
+                  marginLeft: 0,
+                  marginRight: 0,
+                }}
+              >
+                {(telegramMut.error as Error).message}
+              </div>
+            )}
+          </div>
+        )}
+
+        {draftChannel === "twist" && (
+          <div className="card">
+            <h3 className="symbol-alerts-subtitle" style={{ marginTop: 0 }}>
+              Twist
+            </h3>
+            <div className="form-grid">
+              <div className="field">
+                <label>Label</label>
+                <input
+                  value={twistLabel}
+                  onChange={(e) => setTwistLabel(e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <label>Access token</label>
+                <input
+                  value={twistToken}
+                  onChange={(e) => setTwistToken(e.target.value)}
+                  placeholder="Optional if TWIST_ACCESS_TOKEN set"
+                />
+              </div>
+              <div className="field">
+                <label>Thread / conversation ID</label>
+                <input
+                  value={twistThread}
+                  onChange={(e) => setTwistThread(e.target.value)}
+                />
+              </div>
+            </div>
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={!twistThread.trim() || createMut.isPending}
+              onClick={() =>
+                createMut.mutate({
+                  type: "twist",
+                  label: twistLabel || `Twist · ${symbol}`,
+                  symbol,
+                  config: {
+                    accessToken: twistToken || undefined,
+                    conversationId: twistThread,
+                    threadId: twistThread,
+                  },
+                })
+              }
+            >
+              Add Twist
+            </button>
+          </div>
+        )}
       </div>
 
       {createMut.isError && (

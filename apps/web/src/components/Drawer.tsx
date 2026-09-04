@@ -5,9 +5,11 @@ type Props = {
   title: string;
   onClose: () => void;
   children: React.ReactNode;
+  /** Wider panel for dense intelligence content */
+  size?: "default" | "wide";
 };
 
-export function Drawer({ open, title, onClose, children }: Props) {
+export function Drawer({ open, title, onClose, children, size = "default" }: Props) {
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -43,7 +45,7 @@ export function Drawer({ open, title, onClose, children }: Props) {
       />
       <div
         ref={panelRef}
-        className="drawer-panel"
+        className={`drawer-panel ${size === "wide" ? "drawer-panel-wide" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}

@@ -1,8 +1,40 @@
-# Trader — Stock Notification App
+# Trader — Watchlist, Paper P&L, and Price Alerts
 
-Full-stack watchlist, historical charts, dip analytics, and multi-channel price alerts.
+Track a watchlist, import your broker history, and find out what your selling actually cost you.
 
 No login for now — auth code is present but hidden behind `AUTH_ENABLED` / `VITE_AUTH_ENABLED` (default `false`). The API scopes data to a local user until you flip those flags.
+
+![Watchlist and chart](docs/screenshots/watchlist.png)
+
+## Highlights
+
+- **Watchlist + charts.** Live quotes, historical candles, and non-AI analytics per symbol.
+- **Paper.** Import a Freetrade activity CSV to get realized and open P&L, per-position trade sheets, and a comparison against the S&P 500 and FTSE 100.
+- **If you had never sold.** Pick any position you sold and replay it against the market.
+- **The Hunt.** Opportunity scoring, catalysts, and scenario simulation, with optional AI rationales.
+- **Alerts.** Price and percentage-move rules delivered to email, Telegram, or Twist.
+
+## If you had never sold
+
+Open any sold position on the Paper page and the drawer replays it three ways, valued day by day from the same buys:
+
+| Path | What it assumes |
+|------|-----------------|
+| What you did | Shares still held marked to market, plus the cash each sale raised, plus dividends |
+| If you had held | Every share ever bought is still held today, dividends scaled to that larger share count |
+| If you bought the index | Each sale's proceeds go into the S&P 500 on the sale date |
+
+![The never-sold replay](docs/screenshots/whatif-panel.png)
+
+Broker exports record shares as traded, while Yahoo closes are split-adjusted, so a pre-split buy would otherwise be counted at a fraction of its real size. Rather than trust split rows that exports often omit, each trade's price is compared against the adjusted close that day. The ratio between them is the split factor, and it is snapped onto a known split ratio only when it lands close to one. Anything ambiguous falls back to the broker's own split records.
+
+The counterfactual deliberately assumes nothing else changed. That flatters holding, since in reality the money went somewhere, which is why the index path sits alongside it.
+
+## Paper P&L
+
+![Paper P&L](docs/screenshots/portfolio.png)
+
+Positions are grouped by ISIN, so a ticker change carries its history across. Realized P&L uses average cost. Open positions are marked with live quotes and converted to account currency at each day's rate.
 
 ## Stack
 
@@ -27,6 +59,8 @@ Default connection string:
 postgresql://trader:trader@localhost:5432/trader
 ```
 
+Migrations live in `apps/api/drizzle` and apply in order: `0000_init`, `0001_channel_symbol`, `0002_intelligence`, `0003_freetrade`.
+
 ### 2. Environment
 
 ```bash
@@ -46,6 +80,8 @@ cp .env.example apps/api/.env
 | `RESEND_API_KEY` / `EMAIL_FROM` | Email alerts (dry-runs if unset) |
 | `TELEGRAM_BOT_TOKEN` / `TELEGRAM_BOT_USERNAME` | Telegram bot |
 | `TWIST_ACCESS_TOKEN` | Optional global Twist token |
+| `DEEPSEEK_API_KEY` | Optional AI rationales on The Hunt |
+| `VITE_API_URL` | Web: API base URL when it is not same-origin |
 
 ### 3. Install & run
 
@@ -60,13 +96,24 @@ Open the web app — no sign-in required while auth flags are false.
 
 To turn auth back on: set `AUTH_ENABLED=true` in `apps/api/.env` and `VITE_AUTH_ENABLED=true` in `apps/web/.env`, then restart both.
 
+### 4. Tests
+
+```bash
+npm test
+```
+
 ## App surfaces
 
 | Route | What it does |
 |-------|----------------|
-| `/` | Two-pane watchlist + historical chart + analytics |
-| `/alerts` | Create price / % dip rules, view fire history |
-| `/settings/channels` | Email, Telegram link, Twist |
+| `/` | Watchlist, historical chart, per-symbol analytics, alerts and channels |
+| `/intelligence` | The Hunt: opportunity scores, catalysts, predictions, scenarios |
+| `/portfolio` | Paper: imported broker P&L, per-position drawers, vs-market comparison |
+| `/settings` | Broker import, channels, Telegram link |
+
+## Importing from Freetrade
+
+Freetrade has no public API, so the import takes the activity CSV export. Drop the file on either the Settings page or the Paper page, and transactions, holdings, and optionally your watchlist are populated. Each import replaces the previous one rather than merging into it, so always upload a full export rather than a slice.
 
 ## Analytics (non-AI)
 
@@ -93,4 +140,11 @@ Every 2 minutes (configurable via `ALERT_CRON`), the API evaluates rules, delive
 apps/web          React SPA
 apps/api          Hono API + cron worker
 packages/shared   Zod schemas + shared types
+docs/screenshots  README images
 ```
+
+## A note on the numbers
+
+This is a personal tracking tool, not advice. Prices come from Yahoo Finance and can be wrong, delayed, or missing. Realized P&L uses average cost and ignores tax treatment entirely.
+
+Screenshots use a synthetic portfolio, not real holdings.

@@ -10,6 +10,7 @@
     "dev:web": "npm run dev -w @trader/web",
     "dev:api": "npm run dev -w @trader/api",
     "build": "npm run build -w @trader/shared && npm run build -w @trader/api && npm run build -w @trader/web",
+    "test": "npm run test -w @trader/api",
     "db:generate": "npm run db:generate -w @trader/api",
     "db:migrate": "npm run db:migrate -w @trader/api",
     "db:push": "npm run db:push -w @trader/api",
