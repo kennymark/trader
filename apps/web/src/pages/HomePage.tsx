@@ -72,17 +72,12 @@ export function HomePage() {
     retry: false,
   });
 
-  const scores = new Map(
-    (hunt.data?.opportunities ?? []).map((o) => [o.symbol, o.opportunityScore]),
-  );
-
   return (
     <div className="two-pane">
       <WatchlistPane
         selectedSymbol={selected}
         onSelect={handleSelect}
         onSymbolsLoaded={handleSymbolsLoaded}
-        scores={scores}
       />
 
       <div className="work-pane">

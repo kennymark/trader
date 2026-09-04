@@ -167,3 +167,24 @@ export const recordFiring = internalMutation({
     await ctx.db.patch(args.ruleId, { lastTriggeredAt: Date.now() });
   },
 });
+
+export const recentEvents = internalQuery({
+  args: { userId: v.string(), limit: v.number() },
+  handler: async (ctx, { userId, limit }) => {
+    const rows = await ctx.db
+      .query("alertEvents")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .order("desc")
+      .take(limit);
+    return rows.map((doc) => ({
+      id: doc._id as string,
+      ruleId: doc.ruleId,
+      symbol: doc.symbol,
+      price: doc.price,
+      message: doc.message,
+      channels: doc.channels,
+      status: doc.status,
+      createdAt: new Date(doc.createdAt).toISOString(),
+    }));
+  },
+});

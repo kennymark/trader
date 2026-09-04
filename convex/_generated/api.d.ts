@@ -12,6 +12,8 @@ import type * as alertCycle from "../alertCycle.js";
 import type * as alerts from "../alerts.js";
 import type * as auth from "../auth.js";
 import type * as channels from "../channels.js";
+import type * as chat from "../chat.js";
+import type * as chatActions from "../chatActions.js";
 import type * as crons from "../crons.js";
 import type * as http from "../http.js";
 import type * as intelligence from "../intelligence.js";
@@ -33,6 +35,8 @@ declare const fullApi: ApiFromModules<{
   alerts: typeof alerts;
   auth: typeof auth;
   channels: typeof channels;
+  chat: typeof chat;
+  chatActions: typeof chatActions;
   crons: typeof crons;
   http: typeof http;
   intelligence: typeof intelligence;

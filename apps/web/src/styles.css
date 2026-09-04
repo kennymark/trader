@@ -505,37 +505,6 @@ button.symbol-suggestion.active {
   color: inherit;
 }
 
-.stock-remove {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  padding: 0;
-  margin: 0;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--danger);
-  font-size: 1.15rem;
-  font-weight: 400;
-  line-height: 1;
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
-}
-
-.stock-remove span {
-  display: block;
-  line-height: 1;
-  transform: translateY(-0.05em);
-}
-
-.stock-remove:hover {
-  background: rgba(255, 107, 107, 0.12);
-  border-color: rgba(255, 107, 107, 0.35);
-}
-
 .stock-symbol {
   font-family: var(--mono);
   font-weight: 500;
@@ -4231,16 +4200,262 @@ textarea:focus-visible {
   color: var(--text-muted);
 }
 
-/* The score rides the row: the hunt is a property of a name, not a page. */
-.stock-score {
-  min-width: 2.2rem;
-  text-align: right;
-  font-size: 0.85rem;
+
+/* --- Ask: the analyst, docked -------------------------------------------- */
+
+/* The one place in the interface that speaks, so it is the one place brass
+   is allowed on chrome: it has to be findable over any surface beneath it. */
+.chat-dock-button {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 80;
+  min-width: 5.5rem;
+  padding: 0.7rem 1.1rem;
+  border: 1px solid var(--brass);
+  border-radius: 0;
+  background: var(--brass);
+  color: #14161a;
+  font-size: 0.92rem;
   font-weight: 600;
-  color: var(--text-muted);
-  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  cursor: pointer;
 }
 
-.stock-row.active .stock-score {
+.chat-dock-button:hover {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--accent-contrast);
+}
+
+.chat-dock-button.open {
+  background: var(--bg-elevated);
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+
+.chat-dock-panel {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 5rem;
+  z-index: 80;
+  width: min(30rem, calc(100vw - 3rem));
+  /* A notice is three lines; a transcript wants room. Sizing to content and
+     capping it keeps the short state from opening onto a void. */
+  max-height: min(34rem, calc(100vh - 8rem));
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  /* Shadow is licensed for overlays only, and this floats over the work. */
+  box-shadow: 0 24px 60px rgb(0 0 0 / 0.55);
+}
+
+.chat-dock-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.chat-dock-head h2 {
+  margin: 0;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.chat-dock-close {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 0.1rem 0.3rem;
+  cursor: pointer;
+}
+
+.chat-dock-close:hover {
   color: var(--ink);
+}
+
+.chat {
+  flex: 1;
+  min-height: 20rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.3rem;
+}
+
+.chat-opening p {
+  margin: 0 0 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.chat-prompts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.4rem;
+}
+
+.chat-prompts button {
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 0;
+  padding: 0.5rem 0.65rem;
+  color: var(--ink);
+  font-size: 0.88rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.chat-prompts button:hover {
+  border-color: var(--ink);
+}
+
+/* Speaker is a label above the words, not a bubble: this is a transcript. */
+.chat-turn-who {
+  font-size: 0.68rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.3rem;
+}
+
+.chat-turn-body {
+  white-space: pre-wrap;
+  line-height: 1.55;
+  font-size: 0.92rem;
+}
+
+.chat-turn-user .chat-turn-body {
+  color: var(--text-muted);
+}
+
+.chat-thinking {
+  color: var(--text-muted);
+}
+
+.chat-error {
+  border-left: 2px solid var(--down);
+  padding-left: 0.65rem;
+  color: var(--down);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.chat-composer {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.75rem 1rem 0.9rem;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.chat-composer input {
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-notice {
+  padding: 1.25rem 1rem;
+  overflow-y: auto;
+}
+
+.chat-notice h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.98rem;
+}
+
+.chat-notice p {
+  margin: 0 0 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+  font-size: 0.9rem;
+}
+
+.chat-notice-cmd {
+  border: 1px solid var(--border);
+  padding: 0.55rem 0.65rem;
+  color: var(--ink) !important;
+  overflow-x: auto;
+  white-space: nowrap;
+  font-size: 0.85rem !important;
+}
+
+@media (max-width: 640px) {
+  .chat-dock-panel {
+    right: 0.75rem;
+    left: 0.75rem;
+    bottom: 4.5rem;
+    width: auto;
+    max-height: min(30rem, calc(100vh - 7rem));
+  }
+
+  .chat-dock-button {
+    right: 0.75rem;
+    bottom: 0.75rem;
+  }
+}
+
+/* Removing a stock is now a header action on the selected row rather than a
+   control repeated down the list, so the list reads as prices, not buttons. */
+.pane-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.pane-header h2 {
+  margin-bottom: 0;
+}
+
+.pane-header-action {
+  flex-shrink: 0;
+  /* Text, not a chip: it should read as a quiet option next to the title
+     rather than compete with the list it acts on. */
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.pane-header-action:hover {
+  color: var(--down);
+}
+
+/* With the × gone the row ends at the score, so the right edge gets the same
+   gutter as the left instead of the gap the button used to fill. */
+.stock-item {
+  padding-right: 1.1rem;
+}
+
+/* No monospace anywhere in this world; the env-var names are marked by weight
+   and a rule, not by a second typeface. */
+.chat-notice code {
+  font-family: inherit;
+  font-weight: 600;
+  color: var(--ink);
+  border-bottom: 1px solid var(--border);
 }

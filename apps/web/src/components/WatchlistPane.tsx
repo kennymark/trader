@@ -12,15 +12,12 @@ type Props = {
   onSelect: (symbol: string) => void;
   /** Lets the page open the first symbol so the chart pane is never a blank void. */
   onSymbolsLoaded?: (symbols: string[]) => void;
-  /** Opportunity score per symbol: the hunt now rides the list rather than a page. */
-  scores?: Map<string, number>;
 };
 
 export function WatchlistPane({
   selectedSymbol,
   onSelect,
   onSymbolsLoaded,
-  scores,
 }: Props) {
   const qc = useQueryClient();
   const { data: session, isPending: sessionPending } = authClient.useSession();
@@ -77,6 +74,7 @@ export function WatchlistPane({
   ]);
 
   const quoteMap = new Map((quotes.data || []).map((q) => [q.symbol, q]));
+  const selectedItem = (watchlist.data || []).find((w) => w.symbol === selectedSymbol);
 
   const removeMutation = useMutation({
     mutationFn: removeWatchlist,
@@ -97,6 +95,15 @@ export function WatchlistPane({
     <div className="pane-left">
       <div className="pane-header">
         <h2>Watchlist</h2>
+        {selectedItem && (
+          <button
+            type="button"
+            className="btn btn-ghost pane-header-action"
+            onClick={() => removeItem(selectedItem)}
+          >
+            Remove {selectedItem.symbol}
+          </button>
+        )}
       </div>
 
       {AUTH_ENABLED && !sessionPending && !isAuthed && (
@@ -127,9 +134,7 @@ export function WatchlistPane({
                 item={item}
                 quote={quoteMap.get(item.symbol)}
                 active={selectedSymbol === item.symbol}
-                score={scores?.get(item.symbol)}
                 onSelect={() => onSelect(item.symbol)}
-                onRemove={() => removeItem(item)}
               />
             </li>
           ))}
@@ -143,16 +148,12 @@ function StockRow({
   item,
   quote,
   active,
-  score,
   onSelect,
-  onRemove,
 }: {
   item: WatchlistItem;
   quote?: Quote;
   active: boolean;
-  score?: number;
   onSelect: () => void;
-  onRemove: () => void;
 }) {
   const pct = quote?.changePercent;
   const pctClass = pct == null ? "" : pct >= 0 ? "pct-up" : "pct-down";
@@ -172,17 +173,6 @@ function StockRow({
             {pct != null ? `${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%` : "—"}
           </div>
         </div>
-        <div className="stock-score" title="Opportunity score">
-          {score != null ? <span className="tabular">{score}</span> : null}
-        </div>
-      </button>
-      <button
-        type="button"
-        className="stock-remove"
-        aria-label={`Remove ${item.symbol}`}
-        onClick={onRemove}
-      >
-        <span aria-hidden="true">×</span>
       </button>
     </div>
   );

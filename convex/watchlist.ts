@@ -111,3 +111,15 @@ export const symbolsFor = internalQuery({
     return rows.map((r) => r.symbol);
   },
 });
+
+export const rowsFor = internalQuery({
+  args: { userId: v.string() },
+  handler: async (ctx, { userId }) => {
+    const rows = await ctx.db
+      .query("watchlistItems")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+    rows.sort((a, b) => a.sortOrder - b.sortOrder || a.symbol.localeCompare(b.symbol));
+    return rows.map((r) => ({ symbol: r.symbol, displayName: r.displayName }));
+  },
+});

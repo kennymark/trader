@@ -191,3 +191,33 @@ export const fetchMarketCompare = () =>
 
 export const fetchWhatIf = (key: string) =>
   convex.action(api.portfolioActions.whatIf, { key }) as Promise<WhatIfResult>;
+
+// --- chat ---
+
+export type ChatMessage = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  provider: string | null;
+  createdAt: string;
+};
+
+export type ChatStatus = {
+  configured: boolean;
+  provider: string | null;
+  hasPortfolio: boolean;
+};
+
+export const fetchChatHistory = () =>
+  convex.query(api.chat.history, {}) as Promise<ChatMessage[]>;
+
+export const fetchChatStatus = () =>
+  convex.action(api.chatActions.status, {}) as Promise<ChatStatus>;
+
+export const askChat = (question: string) =>
+  convex.action(api.chatActions.ask, { question }) as Promise<{
+    answer: string;
+    provider: string;
+  }>;
+
+export const clearChat = () => convex.mutation(api.chat.clear, {});

@@ -153,6 +153,15 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_connection", ["connectionId"]),
 
+  chatMessages: defineTable({
+    userId: v.string(),
+    role: v.string(), // user | assistant
+    content: v.string(),
+    /** Which model answered, so an old thread still says where it came from. */
+    provider: v.union(v.string(), v.null()),
+    createdAt: v.number(),
+  }).index("by_user", ["userId"]),
+
   portfolioHoldings: defineTable({
     userId: v.string(),
     connectionId: v.id("brokerConnections"),

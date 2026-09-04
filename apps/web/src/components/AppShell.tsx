@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { authClient } from "../lib/auth";
 import { SymbolSearch } from "./SymbolSearch";
+import { ChatDock } from "./ChatDock";
 import { AUTH_ENABLED } from "../lib/features";
 
 type Props = {
@@ -84,6 +85,8 @@ export function AppShell({ user, children }: Props) {
         </header>
         <main className="app-content">{children}</main>
       </div>
+
+      <ChatDock />
     </div>
   );
 }

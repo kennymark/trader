@@ -128,3 +128,24 @@ export const updateEvaluations = internalMutation({
     await ctx.db.patch(id, { evaluations });
   },
 });
+
+/**
+ * The most recent scored card per symbol. The snapshot payload is the whole
+ * OpportunityCard, so the chat can read the scoring without re-running the
+ * hunt and its round of Yahoo calls.
+ */
+export const latestCards = internalQuery({
+  args: { userId: v.string(), limit: v.number() },
+  handler: async (ctx, { userId, limit }) => {
+    const rows = await ctx.db
+      .query("opportunitySnapshots")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .order("desc")
+      .take(limit * 4);
+    const bySymbol = new Map<string, any>();
+    for (const row of rows) {
+      if (!bySymbol.has(row.symbol) && row.payload) bySymbol.set(row.symbol, row.payload);
+    }
+    return [...bySymbol.values()].slice(0, limit);
+  },
+});
