@@ -3,11 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ChartPane } from "../components/ChartPane";
 import { WatchlistPane } from "../components/WatchlistPane";
 import { SymbolIntelligence } from "../components/SymbolIntelligence";
-import {
-  CatalystCalendar,
-  FeedList,
-  PredictionsPanel,
-} from "./IntelligencePage";
+import { FeedList, PredictionsPanel } from "./IntelligencePage";
 import { fetchIntelligence, fetchPredictions } from "../lib/queries";
 import {
   readSelectedSymbol,
@@ -15,20 +11,19 @@ import {
   writeSelectedSymbol,
 } from "../lib/selectedSymbol";
 
-type Tab = "chart" | "intelligence" | "feed" | "calendar" | "record";
+type Tab = "chart" | "intelligence" | "feed" | "record";
 
 const TABS: Array<[Tab, string]> = [
   ["chart", "Chart"],
   ["intelligence", "Intelligence"],
   ["feed", "Feed"],
-  ["calendar", "Calendar"],
   ["record", "Track record"],
 ];
 
 /**
  * The watchlist and the hunt are one surface. Scoring is a property of a row
- * rather than a separate place you visit, and the hunt's list-wide views sit
- * beside the chart instead of on their own page.
+ * rather than a separate place you visit. The calendar left for its own route:
+ * dated events are a diary of the whole list, not a view of the selected name.
  */
 export function HomePage() {
   const [selected, setSelected] = useState<string | null>(() => readSelectedSymbol());
@@ -112,14 +107,6 @@ export function HomePage() {
             {hunt.isPending && <p className="work-empty">Scoring your list…</p>}
             {hunt.isError && <p className="work-empty">Couldn’t load the feed.</p>}
             {hunt.data && <FeedList items={hunt.data.feed} />}
-          </div>
-        )}
-
-        {tab === "calendar" && (
-          <div className="work-scroll">
-            {hunt.isPending && <p className="work-empty">Scoring your list…</p>}
-            {hunt.isError && <p className="work-empty">Couldn’t load the calendar.</p>}
-            {hunt.data && <CatalystCalendar items={hunt.data.catalysts} />}
           </div>
         )}
 

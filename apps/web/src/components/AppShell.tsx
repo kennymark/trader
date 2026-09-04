@@ -12,6 +12,11 @@ type Props = {
 const NAV = [
   { to: "/", label: "Watchlist", match: (p: string) => p === "/" || p.startsWith("/intelligence") },
   {
+    to: "/calendar",
+    label: "Calendar",
+    match: (p: string) => p.startsWith("/calendar"),
+  },
+  {
     to: "/portfolio",
     label: "Paper",
     match: (p: string) => p.startsWith("/portfolio"),

@@ -17,6 +17,7 @@ import { authClient } from "./lib/auth";
 import { AUTH_ENABLED } from "./lib/features";
 import { clearGuestWatchlist, getGuestSymbols } from "./lib/guestWatchlist";
 import { syncWatchlist } from "./lib/queries";
+import { CalendarPage } from "./pages/CalendarPage";
 import { HomePage } from "./pages/HomePage";
 import { PortfolioPage } from "./pages/PortfolioPage";
 import { SettingsPage } from "./pages/SettingsPage";
@@ -207,6 +208,12 @@ const intelligenceRoute = createRoute({
   },
 });
 
+const calendarRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/calendar",
+  component: CalendarPage,
+});
+
 const portfolioRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/portfolio",
@@ -215,7 +222,13 @@ const portfolioRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   loginRoute,
-  appRoute.addChildren([indexRoute, intelligenceRoute, portfolioRoute, settingsRoute]),
+  appRoute.addChildren([
+    indexRoute,
+    calendarRoute,
+    intelligenceRoute,
+    portfolioRoute,
+    settingsRoute,
+  ]),
 ]);
 
 export const router = createRouter({
