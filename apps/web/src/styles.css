@@ -18,12 +18,11 @@
   --text: #f2f3f5;
   --text-muted: #9aa1ab;
 
-  /* Interaction: pale bars on a dark sheet, and the same statutory focus. */
+  /* Interaction: pale bars on a dark sheet. Focus is a ring, never a fill. */
   --accent: #f2f3f5;
   --accent-rgb: 242 243 245;
   --accent-dim: #6b7280;
   --accent-contrast: #0e1013;
-  --focus: #ffdd00;
 
   /* Money, lifted for a dark ground. */
   --up: #4ac48a;
@@ -3527,8 +3526,8 @@ button.symbol-suggestion.active {
    ========================================================================== */
 
 ::selection {
-  background: var(--focus);
-  color: var(--ink);
+  background: var(--ink);
+  color: var(--bg);
 }
 
 html {
@@ -3554,11 +3553,11 @@ table th {
 a:focus-visible,
 button:focus-visible,
 [tabindex]:focus-visible {
-  outline: 3px solid transparent;
-  background-color: var(--focus);
-  box-shadow: 0 -2px var(--focus), 0 4px var(--ink);
-  color: var(--ink);
-  text-decoration: none;
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  background-color: transparent;
+  box-shadow: none;
+  color: inherit;
 }
 
 .card,
