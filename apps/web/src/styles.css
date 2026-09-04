@@ -4691,3 +4691,14 @@ textarea:focus-visible {
   appearance: textfield;
   -moz-appearance: textfield;
 }
+
+/* Offline caveat: a marked line rather than a coloured banner, since the
+   figures beneath it are still the real ones — only their age is in question. */
+.cache-notice {
+  margin: 0 0 1.25rem;
+  padding-left: 0.75rem;
+  border-left: 2px solid var(--brass);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}

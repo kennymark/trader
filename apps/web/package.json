@@ -11,7 +11,9 @@
   "dependencies": {
     "@convex-dev/better-auth": "^0.12.5",
     "@convex-dev/react-query": "^0.1.0",
+    "@tanstack/query-sync-storage-persister": "^5.102.8",
     "@tanstack/react-query": "^5.69.0",
+    "@tanstack/react-query-persist-client": "^5.102.8",
     "@tanstack/react-router": "^1.114.25",
     "@trader/shared": "*",
     "better-auth": ">=1.6.11 <1.7.0",

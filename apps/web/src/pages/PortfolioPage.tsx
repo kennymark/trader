@@ -22,6 +22,7 @@ import {
   importFreetradeCsv,
 } from "../lib/queries";
 import { formatDate, formatDateTime } from "../lib/dates";
+import { CacheNotice } from "../components/CacheNotice";
 import { WhatIfPanel } from "../components/WhatIfPanel";
 
 type Filter = "all" | "winners" | "losers" | "open" | "closed" | "never_sold";
@@ -253,9 +254,11 @@ export function PortfolioPage() {
         </div>
       )}
 
+      <CacheNotice updatedAt={data.dataUpdatedAt} refreshing={data.isFetching} />
+
       {data.isLoading ? (
         <div className="muted">Crunching the ledger…</div>
-      ) : data.isError ? (
+      ) : data.isError && !data.data ? (
         <div className="form-error">{(data.error as Error).message}</div>
       ) : !performance ? (
         <div className="card">

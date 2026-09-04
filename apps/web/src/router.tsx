@@ -7,7 +7,9 @@ import {
   Link,
   useRouterState,
 } from "@tanstack/react-router";
-import { QueryClient, QueryClientProvider, QueryErrorResetBoundary } from "@tanstack/react-query";
+import { QueryClient, QueryErrorResetBoundary } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { persister, PERSIST_MAX_AGE, shouldPersist } from "./lib/persist";
 import { ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
 import { convex } from "./lib/convex";
 import { useEffect, useRef } from "react";
@@ -29,6 +31,9 @@ const queryClient = new QueryClient({
       retry: 1,
       refetchOnWindowFocus: false,
       throwOnError: false,
+      // Restored entries have to outlive the session that wrote them, or the
+      // cache is garbage-collected before an offline visit can read it.
+      gcTime: PERSIST_MAX_AGE,
     },
   },
 });
@@ -38,7 +43,14 @@ function RootLayout() {
 
   return (
     <ConvexBetterAuthProvider client={convex} authClient={authClient}>
-      <QueryClientProvider client={queryClient}>
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={{
+          persister,
+          maxAge: PERSIST_MAX_AGE,
+          dehydrateOptions: { shouldDehydrateQuery: shouldPersist },
+        }}
+      >
         <QueryErrorResetBoundary>
         {({ reset }) => (
           <ErrorBoundary
@@ -51,7 +63,7 @@ function RootLayout() {
           </ErrorBoundary>
         )}
         </QueryErrorResetBoundary>
-      </QueryClientProvider>
+      </PersistQueryClientProvider>
     </ConvexBetterAuthProvider>
   );
 }

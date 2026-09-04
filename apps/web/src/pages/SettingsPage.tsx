@@ -9,7 +9,6 @@ import {
   updateAlert,
   deleteChannel,
   updateChannel,
-  fetchPortfolioHealth,
   fetchFreetrade,
   importFreetradeCsv,
   disconnectFreetrade,
@@ -25,7 +24,6 @@ import type {
   AlertRule,
   HistoryRange,
   NotificationChannel,
-  PortfolioHealth,
   PortfolioHolding,
   UserPreferences,
   WorkTab,
@@ -329,63 +327,6 @@ function FreetradeSection() {
   );
 }
 
-function PortfolioHealthSection({ data }: { data: PortfolioHealth }) {
-  return (
-    <div className="hunt-portfolio-panel" style={{ marginBottom: "2rem" }}>
-      <div className="stats-grid">
-        <div className="stat">
-          <div className="stat-label">Health score</div>
-          <div className="stat-value tabular">{data.healthScore}</div>
-        </div>
-        <div className="stat">
-          <div className="stat-label">Symbols</div>
-          <div className="stat-value tabular">{data.symbolCount}</div>
-        </div>
-        <div className="stat">
-          <div className="stat-label">Avg opportunity</div>
-          <div className="stat-value tabular">{data.averageOpportunityScore ?? "—"}</div>
-        </div>
-        <div className="stat">
-          <div className="stat-label">Avg risk</div>
-          <div className="stat-value tabular">{data.averageRiskScore ?? "—"}</div>
-        </div>
-      </div>
-      <p className="muted" style={{ marginTop: "0.75rem" }}>
-        Source: {data.holdingsProxy === "freetrade" ? "Freetrade holdings" : "Watchlist proxy"} ·{" "}
-        {data.note}
-      </p>
-      {data.concentration.warning ? (
-        <p className="muted">{data.concentration.warning}</p>
-      ) : null}
-      <div className="hunt-portfolio-cols">
-        <div>
-          <h3>Strongest</h3>
-          {data.strongest.map((s) => (
-            <div key={s.symbol} className="muted">
-              <span className="intel-symbol">{s.symbol}</span> · {s.opportunityScore} — {s.reason}
-            </div>
-          ))}
-          {!data.strongest.length ? <div className="muted">—</div> : null}
-        </div>
-        <div>
-          <h3>Weakest</h3>
-          {data.weakest.map((s) => (
-            <div key={s.symbol} className="muted">
-              <span className="intel-symbol">{s.symbol}</span> · {s.opportunityScore} — {s.reason}
-            </div>
-          ))}
-          {!data.weakest.length ? <div className="muted">—</div> : null}
-        </div>
-      </div>
-      <div className="muted" style={{ marginTop: "0.75rem" }}>
-        Improving: {data.improving.join(", ") || "—"} · Deteriorating:{" "}
-        {data.deteriorating.join(", ") || "—"}
-      </div>
-    </div>
-  );
-}
-
-
 function SettingsNav() {
   const [active, setActive] = useState<string>(SECTIONS[0][0]);
 
@@ -647,12 +588,6 @@ export function SettingsPage() {
   const alerts = useQuery({ queryKey: ["alerts"], queryFn: fetchAlerts });
   const events = useQuery({ queryKey: ["alert-events"], queryFn: fetchAlertEvents });
   const channels = useQuery({ queryKey: ["channels"], queryFn: fetchChannels });
-  const portfolio = useQuery({
-    queryKey: ["portfolio-health"],
-    queryFn: fetchPortfolioHealth,
-    staleTime: 5 * 60_000,
-  });
-
   const updateAlertMut = useMutation({
     mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) =>
       updateAlert(id, { enabled }),
@@ -775,15 +710,6 @@ export function SettingsPage() {
 
           <Section id="data" title="Data" lead="Where your positions come from.">
             <FreetradeSection />
-
-            <h3 className="settings-sub">Portfolio health</h3>
-            {portfolio.isLoading ? (
-              <div className="muted">Scoring portfolio…</div>
-            ) : portfolio.data ? (
-              <PortfolioHealthSection data={portfolio.data} />
-            ) : portfolio.isError ? (
-              <div className="form-error">{(portfolio.error as Error).message}</div>
-            ) : null}
           </Section>
 
           <Section
