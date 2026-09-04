@@ -1,0 +1,371 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-04T16:58:27.965642Z",
+  "title": "Design System: Trader",
+  "extensions": {
+    "colorMeta": {
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#06070a",
+        "tonalRamp": [
+          "#000000",
+          "#06070a",
+          "#0a0c11",
+          "#12151c",
+          "#1b1f28",
+          "#2a3039",
+          "#3b4250",
+          "#79808f"
+        ]
+      },
+      "ink-pane": {
+        "role": "neutral",
+        "displayName": "Ink Pane",
+        "canonical": "#0a0c11",
+        "tonalRamp": [
+          "#000000",
+          "#05060a",
+          "#0a0c11",
+          "#12151c",
+          "#1b1f28",
+          "#2a3039",
+          "#3b4250",
+          "#79808f"
+        ]
+      },
+      "ink-raised": {
+        "role": "neutral",
+        "displayName": "Ink Raised",
+        "canonical": "#12151c",
+        "tonalRamp": [
+          "#05060a",
+          "#0a0c11",
+          "#12151c",
+          "#1b1f28",
+          "#2a3039",
+          "#3b4250",
+          "#5b6373",
+          "#79808f"
+        ]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Rule",
+        "canonical": "#1b1f28",
+        "tonalRamp": [
+          "#0a0c11",
+          "#12151c",
+          "#1b1f28",
+          "#2a3039",
+          "#3b4250",
+          "#5b6373",
+          "#79808f",
+          "#b9bec8"
+        ]
+      },
+      "rule-strong": {
+        "role": "neutral",
+        "displayName": "Rule Strong",
+        "canonical": "#2a3039",
+        "tonalRamp": [
+          "#12151c",
+          "#1b1f28",
+          "#2a3039",
+          "#3b4250",
+          "#5b6373",
+          "#79808f",
+          "#b9bec8",
+          "#e9ebf0"
+        ]
+      },
+      "paper": {
+        "role": "primary",
+        "displayName": "Paper",
+        "canonical": "#e9ebf0",
+        "tonalRamp": [
+          "#2a3039",
+          "#3b4250",
+          "#5b6373",
+          "#79808f",
+          "#9aa1ad",
+          "#b9bec8",
+          "#d4d8df",
+          "#e9ebf0"
+        ]
+      },
+      "paper-dim": {
+        "role": "neutral",
+        "displayName": "Paper Dim",
+        "canonical": "#79808f",
+        "tonalRamp": [
+          "#1b1f28",
+          "#2a3039",
+          "#3b4250",
+          "#5b6373",
+          "#79808f",
+          "#9aa1ad",
+          "#b9bec8",
+          "#e9ebf0"
+        ]
+      },
+      "brass": {
+        "role": "secondary",
+        "displayName": "Brass",
+        "canonical": "#c9a227",
+        "tonalRamp": [
+          "#2a2108",
+          "#453612",
+          "#614d1a",
+          "#7f6622",
+          "#9c802b",
+          "#c9a227",
+          "#dcbf5e",
+          "#efdca6"
+        ]
+      },
+      "gain": {
+        "role": "tertiary",
+        "displayName": "Gain",
+        "canonical": "#4ec08a",
+        "tonalRamp": [
+          "#0d2a1e",
+          "#14412e",
+          "#1c583e",
+          "#26714f",
+          "#328a61",
+          "#4ec08a",
+          "#7fd4ab",
+          "#b4e8cd"
+        ]
+      },
+      "loss": {
+        "role": "tertiary",
+        "displayName": "Loss",
+        "canonical": "#e05c62",
+        "tonalRamp": [
+          "#3a1114",
+          "#54181c",
+          "#6f2025",
+          "#8c2a30",
+          "#b0383f",
+          "#e05c62",
+          "#ec8c90",
+          "#f6c1c3"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "The single headline figure on a surface. One per screen at most."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Page titles."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Panel and section titles."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Prose, descriptions and table cells."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Stat labels, axis text and captions, always in Paper Dim."
+      },
+      "figure": {
+        "displayName": "Figure",
+        "purpose": "Every number in the interface. Tabular numerals, no monospaced face."
+      }
+    },
+    "shadows": [
+      {
+        "name": "overlay",
+        "value": "0 24px 60px rgba(0, 0, 0, 0.35)",
+        "purpose": "The position drawer sliding over the page."
+      },
+      {
+        "name": "popover",
+        "value": "0 16px 40px rgba(0, 0, 0, 0.45)",
+        "purpose": "Search suggestions and menus."
+      },
+      {
+        "name": "focus-ring",
+        "value": "0 0 0 3px rgb(233 235 240 / 0.12)",
+        "purpose": "Keyboard focus on a control."
+      }
+    ],
+    "motion": [
+      {
+        "name": "control",
+        "value": "border-color 0.15s, background 0.15s, color 0.15s",
+        "purpose": "Default control state change."
+      },
+      {
+        "name": "ring-sweep",
+        "value": "stroke-dashoffset 240ms ease",
+        "purpose": "The win-rate ring drawing itself."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "xl",
+        "value": "1200px"
+      },
+      {
+        "name": "lg",
+        "value": "1100px"
+      },
+      {
+        "name": "md",
+        "value": "980px"
+      },
+      {
+        "name": "nav",
+        "value": "900px"
+      },
+      {
+        "name": "sm",
+        "value": "800px"
+      },
+      {
+        "name": "xs",
+        "value": "640px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Button",
+      "kind": "button",
+      "refersTo": "button",
+      "description": "The default control. Quiet at rest, revealed on hover.",
+      "html": "<button class=\"ds-btn\">Vs market</button>",
+      "css": ".ds-btn { font-family: var(--font, 'Instrument Sans', system-ui, sans-serif); font-size: 0.88rem; display: inline-flex; align-items: center; gap: 0.4rem; border: 1px solid #1b1f28; background: transparent; color: #79808f; border-radius: 6px; padding: 0.38rem 0.75rem; cursor: pointer; transition: border-color 0.15s, background 0.15s, color 0.15s; } .ds-btn:hover { border-color: #2a3039; color: #e9ebf0; background: rgb(233 235 240 / 0.04); } .ds-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgb(233 235 240 / 0.12); }"
+    },
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primacy from weight and a lifted surface, never a colour fill.",
+      "html": "<button class=\"ds-btn-primary\">Re-import CSV</button>",
+      "css": ".ds-btn-primary { font-family: var(--font, 'Instrument Sans', system-ui, sans-serif); font-size: 0.88rem; font-weight: 600; border: 1px solid #2a3039; background: #12151c; color: #e9ebf0; border-radius: 6px; padding: 0.38rem 0.75rem; cursor: pointer; transition: border-color 0.15s, background 0.15s, color 0.15s; } .ds-btn-primary:hover { background: #1a1f28; border-color: #79808f; } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px rgb(233 235 240 / 0.12); }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Darker than the panel it sits in, so a field reads as a recess.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Search ticker or name\">",
+      "css": ".ds-input { font-family: var(--font, 'Instrument Sans', system-ui, sans-serif); font-size: 0.85rem; background: #06070a; color: #e9ebf0; border: 1px solid #1b1f28; border-radius: 8px; padding: 0.45rem 0.6rem; outline: none; } .ds-input::placeholder { color: #79808f; } .ds-input:focus { border-color: #333a46; }"
+    },
+    {
+      "name": "Sidebar Navigation",
+      "kind": "nav",
+      "refersTo": "nav-item",
+      "description": "A rule in the left margin marks position, the way a tab marks a page in a ledger.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-item ds-active\" href=\"#\">Watchlist</a><a class=\"ds-nav-item\" href=\"#\">The Hunt</a><a class=\"ds-nav-item\" href=\"#\">Paper</a></nav>",
+      "css": ".ds-nav { display: flex; flex-direction: column; gap: 0.2rem; width: 188px; font-family: var(--font, 'Instrument Sans', system-ui, sans-serif); } .ds-nav-item { display: flex; align-items: center; padding: 0.4rem 0.6rem 0.4rem 0.75rem; border-left: 2px solid transparent; color: #79808f; text-decoration: none; font-size: 0.9rem; letter-spacing: -0.005em; } .ds-nav-item:hover { color: #e9ebf0; } .ds-nav-item.ds-active { color: #e9ebf0; border-left-color: #e9ebf0; font-weight: 600; }"
+    },
+    {
+      "name": "Status Pill",
+      "kind": "chip",
+      "refersTo": "button",
+      "description": "The one place capitals survive, because the whole word is the datum.",
+      "html": "<span class=\"ds-pill ds-pill-open\">OPEN</span> <span class=\"ds-pill ds-pill-closed\">CLOSED</span>",
+      "css": ".ds-pill { font-family: var(--font, 'Instrument Sans', system-ui, sans-serif); display: inline-block; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 0.12rem 0.4rem; border-radius: 999px; border: 1px solid #1b1f28; } .ds-pill-open { color: #4ec08a; border-color: rgb(78 192 138 / 0.35); } .ds-pill-closed { color: #79808f; }"
+    },
+    {
+      "name": "Panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "Flat at rest. A single tonal step and a hairline do all the work.",
+      "html": "<section class=\"ds-panel\"><div class=\"ds-panel-label\">Net result</div><div class=\"ds-panel-figure\">\u00a330,065</div></section>",
+      "css": ".ds-panel { font-family: var(--font, 'Instrument Sans', system-ui, sans-serif); background: rgb(12 14 19 / 0.5); border: 1px solid #1b1f28; border-radius: 8px; padding: 0.9rem 1rem 0.85rem; } .ds-panel-label { font-size: 0.72rem; color: #79808f; margin-bottom: 0.35rem; } .ds-panel-figure { font-size: 2.2rem; font-weight: 600; line-height: 1.05; letter-spacing: -0.05em; color: #4ec08a; font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Figure Row",
+      "kind": "custom",
+      "refersTo": "panel",
+      "description": "How every number in the app is set: tabular numerals, sentence-case label, colour only when it is money.",
+      "html": "<div class=\"ds-figures\"><div><span class=\"ds-fig-label\">Deployed</span><span class=\"ds-fig\">\u00a320,900</span></div><div><span class=\"ds-fig-label\">Total P&amp;L</span><span class=\"ds-fig ds-gain\">+\u00a34,145.30</span></div><div><span class=\"ds-fig-label\">Realized</span><span class=\"ds-fig ds-loss\">\u2212\u00a328.77</span></div></div>",
+      "css": ".ds-figures { font-family: var(--font, 'Instrument Sans', system-ui, sans-serif); display: flex; gap: 2rem; } .ds-figures > div { display: flex; flex-direction: column; gap: 0.2rem; } .ds-fig-label { font-size: 0.72rem; color: #79808f; } .ds-fig { font-size: 0.95rem; font-weight: 500; color: #e9ebf0; font-variant-numeric: tabular-nums; font-feature-settings: 'tnum' 1; } .ds-gain { color: #4ec08a; } .ds-loss { color: #e05c62; }"
+    },
+    {
+      "name": "Replay Verdict",
+      "kind": "custom",
+      "refersTo": "panel",
+      "description": "The signature component. States the result in words and money before any chart appears.",
+      "html": "<div class=\"ds-verdict\"><div class=\"ds-verdict-line\">Selling cost you \u00a33,663.00</div><div class=\"ds-verdict-meta\">1 sale \u00b7 22.2408 shares \u00b7 GOOGL at \u00a3250.13 today</div></div>",
+      "css": ".ds-verdict { font-family: var(--font, 'Instrument Sans', system-ui, sans-serif); border: 1px solid #1b1f28; border-left: 3px solid #e05c62; border-radius: 8px; padding: 0.75rem 0.9rem; background: rgb(12 14 19 / 0.55); } .ds-verdict-line { font-size: 1.35rem; font-weight: 600; letter-spacing: -0.02em; color: #e9ebf0; margin-bottom: 0.2rem; } .ds-verdict-meta { font-size: 0.85rem; color: #79808f; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Darkroom",
+    "overview": "The interface is a darkroom: a near-black room where the truth of a past decision gradually develops into view. Nothing is lit that does not need to be seen. The ground is Ink (#06070a), close to true black, and every panel sits within a few values of it, separated by a hairline rather than a fill.\n\nColour is rationed to the point of scarcity. Chrome is achromatic: navigation, buttons, inputs, selection and focus are all Paper on Ink, signalled by value rather than hue. That leaves Gain, Loss and Brass as the only colour a person ever sees, which means colour always carries information. Money is the only thing allowed to be coloured.\n\nComponents are instrument-grade and precise: small radii, tight padding, hairline outlines, nothing soft or friendly. Figures are the loudest element on any screen, and they align in columns without a monospaced face.",
+    "keyCharacteristics": [
+      "Near-black ground with panels within a few values of it",
+      "Achromatic chrome; interaction signalled by value, not hue",
+      "Colour reserved for money and for attention",
+      "Hairline rules instead of filled cards",
+      "One typeface, with figures on tabular numerals",
+      "Flat at rest; shadow only where something floats"
+    ],
+    "rules": [
+      {
+        "name": "The Money Rule",
+        "body": "Gain and Loss appear only on figures that are literally profit or loss. A button, a tab, a chart of price, a status pill: none of these may be green or red. If something is coloured, a person should be able to say what number it refers to.",
+        "section": "colors"
+      },
+      {
+        "name": "The Value Rule",
+        "body": "Interaction is signalled by value, never by hue. Selection, hover, focus and primary emphasis move a control from Paper Dim toward Paper, or lift its surface from Ink toward Ink Raised. Introducing a coloured chrome accent is a rejection of this system.",
+        "section": "colors"
+      },
+      {
+        "name": "The Sentence Case Rule",
+        "body": "Labels and headings are sentence case. Tracked-out capitals are reserved for short status pills such as OPEN, BUY and SELL, where the whole word is the datum. Capitals above a heading are a defect.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Rule",
+        "body": "Any element that renders a number carries tabular numerals. Columns of figures must align on the decimal without a monospaced font.",
+        "section": "typography"
+      },
+      {
+        "name": "The No Empty Room Rule",
+        "body": "The largest region of a surface never holds an empty state when real content could occupy it. The watchlist opens the first symbol on load rather than asking the visitor to pick one.",
+        "section": "layout"
+      },
+      {
+        "name": "The Floating Rule",
+        "body": "Shadow is only permitted on an element that overlaps other content. If it sits in the page flow, it separates by tone and rule alone.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Hairline Rule",
+        "body": "Structure is drawn with 1px borders and tonal steps. Reaching for a fill, a gradient, or a shadow to separate two regions means the hairline was not tried.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "Do signal interaction by value: move a control from Paper Dim (#79808f) to Paper (#e9ebf0), or lift its surface from Ink (#06070a) to Ink Raised (#12151c).",
+      "Do reserve Gain (#4ec08a) and Loss (#e05c62) for figures that are literally profit or loss.",
+      "Do use Brass (#c9a227) to mark what deserves attention, above all the never-sold path in the replay.",
+      "Do draw structure with 1px Rule (#1b1f28) hairlines and a single tonal step.",
+      "Do give every numeric element tabular numerals so columns align.",
+      "Do write labels and headings in sentence case.",
+      "Do open the first symbol on the watchlist rather than showing an empty pane."
+    ],
+    "donts": [
+      "Don't introduce a coloured chrome accent. A blue, green or violet used for buttons, links, tabs or selection is a rejection of this system. This was tried and rejected.",
+      "Don't use a monospaced typeface anywhere, including chart axes. Figures align on tabular numerals in Instrument Sans. This was tried and rejected.",
+      "Don't colour a button, tab, chart of price, or status chip green or red unless it reports profit or loss.",
+      "Don't add shadow to an element that sits in the page flow.",
+      "Don't separate regions with fills or gradients when a hairline and a tonal step will do."
+    ]
+  }
+}
