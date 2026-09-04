@@ -7,6 +7,8 @@ import {
   useRouterState,
 } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider, QueryErrorResetBoundary } from "@tanstack/react-query";
+import { ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
+import { convex } from "./lib/convex";
 import { useEffect, useRef } from "react";
 import { AppShell } from "./components/AppShell";
 import { ErrorBoundary, ErrorFallback } from "./components/ErrorBoundary";
@@ -34,8 +36,9 @@ function RootLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <QueryErrorResetBoundary>
+    <ConvexBetterAuthProvider client={convex} authClient={authClient}>
+      <QueryClientProvider client={queryClient}>
+        <QueryErrorResetBoundary>
         {({ reset }) => (
           <ErrorBoundary
             resetKeys={[pathname]}
@@ -46,8 +49,9 @@ function RootLayout() {
             <Outlet />
           </ErrorBoundary>
         )}
-      </QueryErrorResetBoundary>
-    </QueryClientProvider>
+        </QueryErrorResetBoundary>
+      </QueryClientProvider>
+    </ConvexBetterAuthProvider>
   );
 }
 
