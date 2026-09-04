@@ -2,7 +2,9 @@
 
 Track a watchlist, import your broker history, and find out what your selling actually cost you.
 
-No login for now — auth code is present but hidden behind `AUTH_ENABLED` / `VITE_AUTH_ENABLED` (default `false`). The API scopes data to a local user until you flip those flags.
+**Live: https://trader-eight-iota.vercel.app**
+
+Auth is off by default for local work: with `AUTH_ENABLED` / `VITE_AUTH_ENABLED` unset, the API scopes every request to a single local user. The deployment runs with both set to `true`, so guests can browse market data and only a signed-in user sees a portfolio.
 
 ![Watchlist and chart](docs/screenshots/watchlist.png)
 
@@ -136,7 +138,9 @@ Every 2 minutes (configurable via `ALERT_CRON`), the API evaluates rules, delive
 
 ## Deploying to Vercel + Neon
 
-The web build and the API ship from one Vercel project. `api/[...path].ts` serves the same Hono app used locally, so `/api/*` is same-origin and needs no `VITE_API_URL`. Alerts run from a Vercel Cron trigger instead of node-cron.
+Live at **https://trader-eight-iota.vercel.app**.
+
+The web build and the API ship from one Vercel project. `api/index.ts` serves the same Hono app used locally, and a rewrite sends every `/api/*` path to it, so the API is same-origin and needs no `VITE_API_URL`. Alerts run from a Vercel Cron trigger instead of node-cron.
 
 1. **Database.** Create a Neon project and copy the **pooled** connection string, the host containing `-pooler`. Apply the four migrations in `apps/api/drizzle` in order.
 2. **Environment.** Set these on the Vercel project:
@@ -153,7 +157,11 @@ The web build and the API ship from one Vercel project. `api/[...path].ts` serve
 
 > **Turn auth on before exposing a deployment.** With `AUTH_ENABLED=false` every request is scoped to a single local user, so anyone who opens the URL sees and can modify that portfolio. That default is fine on localhost and wrong on the public internet.
 
-Two things behave differently in serverless. The database client holds one connection per invocation with prepared statements off, because Neon's pooler runs in transaction mode. And Vercel's Hobby plan only allows daily cron, so `vercel.json` schedules alerts hourly; anything more frequent needs a Pro plan or an external scheduler hitting `/api/cron/alerts`.
+Three things behave differently in serverless:
+
+- The database client holds one connection per invocation with prepared statements off, because Neon's pooler runs in transaction mode.
+- The function must export named HTTP methods rather than a default export. A default export is invoked with Node's `(req, res)` signature, which Hono cannot consume.
+- Hobby plans allow only daily cron, so `vercel.json` runs alerts once a day. Anything more frequent needs a Pro plan, or any external scheduler sending `Authorization: Bearer $CRON_SECRET` to `/api/cron/alerts`.
 
 ## Project layout
 

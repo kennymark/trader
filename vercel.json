@@ -4,14 +4,24 @@
   "buildCommand": "npm run build -w @trader/shared && npm run build -w @trader/api && npm run build -w @trader/web",
   "outputDirectory": "apps/web/dist",
   "functions": {
-    "api/[...path].ts": {
+    "api/index.ts": {
       "maxDuration": 60
     }
   },
   "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    {
+      "source": "/api/:path*",
+      "destination": "/api"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
   ],
   "crons": [
-    { "path": "/api/cron/alerts", "schedule": "0 * * * *" }
+    {
+      "path": "/api/cron/alerts",
+      "schedule": "0 9 * * *"
+    }
   ]
 }

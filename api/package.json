@@ -1,0 +1,5 @@
+{
+  "name": "@trader/vercel-entry",
+  "private": true,
+  "type": "module"
+}
