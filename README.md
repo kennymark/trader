@@ -134,9 +134,31 @@ Every 2 minutes (configurable via `ALERT_CRON`), the API evaluates rules, delive
 2. Point the webhook at `POST /api/telegram/webhook` (optional secret header)
 3. In the app, open **Channels → Generate Telegram link** and tap Start
 
+## Deploying to Vercel + Neon
+
+The web build and the API ship from one Vercel project. `api/[...path].ts` serves the same Hono app used locally, so `/api/*` is same-origin and needs no `VITE_API_URL`. Alerts run from a Vercel Cron trigger instead of node-cron.
+
+1. **Database.** Create a Neon project and copy the **pooled** connection string, the host containing `-pooler`. Apply the four migrations in `apps/api/drizzle` in order.
+2. **Environment.** Set these on the Vercel project:
+
+| Variable | Value |
+|----------|-------|
+| `DATABASE_URL` | Neon pooled connection string |
+| `AUTH_ENABLED` / `VITE_AUTH_ENABLED` | `true` — see the warning below |
+| `BETTER_AUTH_SECRET` | A long random string |
+| `API_ORIGIN` / `WEB_ORIGIN` | The deployment URL, e.g. `https://trader.vercel.app` |
+| `CRON_SECRET` | A long random string, sent by Vercel Cron as a bearer token |
+
+3. **Deploy.** `vercel --prod`. The build runs shared, then API, then web.
+
+> **Turn auth on before exposing a deployment.** With `AUTH_ENABLED=false` every request is scoped to a single local user, so anyone who opens the URL sees and can modify that portfolio. That default is fine on localhost and wrong on the public internet.
+
+Two things behave differently in serverless. The database client holds one connection per invocation with prepared statements off, because Neon's pooler runs in transaction mode. And Vercel's Hobby plan only allows daily cron, so `vercel.json` schedules alerts hourly; anything more frequent needs a Pro plan or an external scheduler hitting `/api/cron/alerts`.
+
 ## Project layout
 
 ```
+api               Vercel function entry (serves the Hono app)
 apps/web          React SPA
 apps/api          Hono API + cron worker
 packages/shared   Zod schemas + shared types
