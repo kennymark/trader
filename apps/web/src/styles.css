@@ -1,31 +1,41 @@
 :root {
-  /* Chrome is neutral. Colour is reserved for meaning. */
-  --bg: #0b0d10;
-  --bg-pane: #0f1216;
-  --bg-elevated: #151921;
-  --surface: 18 21 26;
-  --border: #232831;
-  --border-strong: #333a46;
-  --text: #e7e9ee;
-  --text-muted: #8b93a1;
+  /*
+   * Ink and ledger. The ground is near-black; panels are barely lifted off it and
+   * defined by a hairline rather than a fill.
+   *
+   * Colour is rationed. Interaction is signalled by value, not hue: selection and
+   * primary actions are chalk on ink. The only hues in the interface are profit,
+   * loss, and the brass used for the path not taken.
+   */
+  --bg: #06070a;
+  --bg-pane: #0a0c11;
+  --bg-elevated: #12151c;
+  --surface: 12 14 19;
+  --border: #1b1f28;
+  --border-strong: #2a3039;
+  --text: #e9ebf0;
+  --text-muted: #79808f;
 
-  /* Interactive: buttons, links, selection, focus. Never used for data. */
-  --accent: #6ea8fe;
-  --accent-rgb: 110 168 254;
-  --accent-dim: #24405f;
-  --accent-contrast: #07101d;
+  /* Interaction: achromatic on purpose. */
+  --accent: #e9ebf0;
+  --accent-rgb: 233 235 240;
+  --accent-dim: #333a46;
+  --accent-contrast: #06070a;
 
-  /* Data only: profit, loss, risk. Never used for chrome. */
-  --up: #45d18b;
-  --up-rgb: 69 209 139;
-  --down: #f2565c;
-  --down-rgb: 242 86 92;
-  --danger: #f2565c;
-  --warn: #f0b429;
+  /* Data only. */
+  --up: #4ec08a;
+  --up-rgb: 78 192 138;
+  --down: #e05c62;
+  --down-rgb: 224 92 98;
+  --danger: #e05c62;
+  --warn: #c9a227;
+  --brass: #c9a227;
+  --brass-rgb: 201 162 39;
 
-  --font: "IBM Plex Sans", system-ui, sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, monospace;
-  --radius: 8px;
+  --font: "Instrument Sans", system-ui, sans-serif;
+  /* One family throughout. Figures align on tabular numerals, not a mono face. */
+  --mono: "Instrument Sans", system-ui, sans-serif;
+  --radius: 6px;
 }
 
 *,
@@ -43,10 +53,7 @@ body,
 
 body {
   font-family: var(--font);
-  background:
-    radial-gradient(1200px 600px at 10% -10%, #151a22 0%, transparent 55%),
-    radial-gradient(900px 500px at 100% 0%, #141922 0%, transparent 50%),
-    var(--bg);
+  background: var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
 }
@@ -60,12 +67,24 @@ textarea {
 }
 
 a {
-  color: var(--accent);
-  text-decoration: none;
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 0.2em;
 }
 
 a:hover {
-  text-decoration: underline;
+  text-decoration-color: var(--text);
+}
+
+/* Buttons that happen to be anchors are not prose links. */
+a.btn,
+a.btn:hover,
+.sidebar-brand,
+.sidebar-brand:hover,
+.sidebar-nav a,
+.sidebar-nav a:hover {
+  text-decoration: none;
 }
 
 .app-shell {
@@ -81,14 +100,14 @@ a:hover {
 }
 
 .sidebar {
-  width: 220px;
+  width: 188px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  padding: 1.1rem 0.85rem;
+  gap: 1.35rem;
+  padding: 1.1rem 0.6rem 0.9rem;
   border-right: 1px solid var(--border);
-  background: rgb(var(--surface) / 0.92);
+  background: transparent;
 }
 
 .sidebar-brand {
@@ -113,31 +132,28 @@ a:hover {
   display: flex;
   align-items: center;
   gap: 0.55rem;
-  padding: 0.55rem 0.7rem;
-  border-radius: 10px;
+  padding: 0.4rem 0.6rem 0.4rem 0.75rem;
+  border-left: 2px solid transparent;
   color: var(--text-muted);
   text-decoration: none;
-  font-size: 0.92rem;
+  font-size: 0.9rem;
+  letter-spacing: -0.005em;
 }
 
 .sidebar-nav a:hover {
   color: var(--text);
-  background: rgb(var(--accent-rgb) / 0.05);
   text-decoration: none;
 }
 
+/* A rule in the margin marks position, the way a ledger tab would. */
 .sidebar-nav a.active {
   color: var(--text);
-  background: rgb(var(--accent-rgb) / 0.12);
-  border: 1px solid rgb(var(--accent-rgb) / 0.22);
+  border-left-color: var(--text);
+  font-weight: 600;
 }
 
 .sidebar-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: currentColor;
-  opacity: 0.45;
+  display: none;
 }
 
 .sidebar-nav a.active .sidebar-dot {
@@ -159,16 +175,21 @@ a:hover {
 
 .sidebar-user img,
 .sidebar-avatar {
-  width: 32px;
-  height: 32px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  background: rgb(var(--accent-rgb) / 0.15);
+  background: rgb(var(--accent-rgb) / 0.12);
   flex-shrink: 0;
 }
 
 .sidebar-user-name {
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 500;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .app-main {
@@ -268,28 +289,32 @@ a:hover {
   justify-content: center;
   gap: 0.4rem;
   border: 1px solid var(--border);
-  background: var(--bg-elevated);
-  color: var(--text);
-  border-radius: 8px;
-  padding: 0.45rem 0.85rem;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 6px;
+  padding: 0.38rem 0.75rem;
+  font-size: 0.88rem;
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
 }
 
 .btn:hover {
-  border-color: var(--accent-dim);
+  border-color: var(--border-strong);
+  color: var(--text);
+  background: rgb(var(--accent-rgb) / 0.04);
 }
 
 .btn-primary {
-  background: var(--accent);
-  color: var(--accent-contrast);
-  border-color: transparent;
+  background: var(--bg-elevated);
+  color: var(--text);
+  border-color: var(--border-strong);
   font-weight: 600;
 }
 
 .btn-primary:hover {
-  filter: brightness(1.05);
-  border-color: transparent;
+  background: #1a1f28;
+  border-color: var(--text-muted);
+  color: var(--text);
 }
 
 .btn-ghost {
@@ -919,7 +944,7 @@ button.symbol-suggestion.active {
   padding: 2rem;
   background:
     linear-gradient(160deg, rgb(var(--surface) / 0.92), rgb(var(--surface) / 0.95)),
-    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%236ea8fe' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23e9ebf0' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 
 .login-card {
@@ -1130,8 +1155,8 @@ button.symbol-suggestion.active {
 }
 
 .tabular {
-  font-family: var(--mono);
   font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
   white-space: nowrap;
 }
 

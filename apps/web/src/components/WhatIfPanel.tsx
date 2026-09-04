@@ -11,9 +11,10 @@ type PathId = "actual" | "neverSold" | "reinvested";
  * stay out of it: those mean profit and loss elsewhere, and a path is neither.
  */
 const PATH_COLORS: Record<PathId, string> = {
-  actual: "var(--accent)",
-  neverSold: "#f0b429",
-  reinvested: "#a78bfa",
+  actual: "var(--text)",
+  // Brass marks the path not taken, the one thing this panel exists to show.
+  neverSold: "var(--brass)",
+  reinvested: "var(--text-muted)",
 };
 
 function money(n: number | null | undefined, currency = "GBP") {

@@ -55,10 +55,8 @@ export function AppShell({ user, children }: Props) {
             user ? (
               <div className="sidebar-user">
                 {user.image ? <img src={user.image} alt="" /> : <div className="sidebar-avatar" />}
-                <div>
-                  <div className="sidebar-user-name">{user.name || user.email}</div>
-                  <div className="muted">Signed in</div>
-                </div>
+                {/* The name already says you are signed in. */}
+                <div className="sidebar-user-name">{user.name || user.email}</div>
                 <button
                   type="button"
                   className="btn btn-ghost"

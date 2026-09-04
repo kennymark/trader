@@ -44,7 +44,7 @@ export function PriceChart({ bars }: Props) {
       layout: {
         background: { color: "transparent" },
         textColor: theme.muted,
-        fontFamily: "IBM Plex Mono, monospace",
+        fontFamily: "Instrument Sans, system-ui, sans-serif",
       },
       grid: {
         vertLines: { color: theme.grid },
