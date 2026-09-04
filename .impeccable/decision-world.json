@@ -1,0 +1,173 @@
+{
+  "title": "Choose the visual world",
+  "question": "Three dark themes have been rejected. The roll assigned The Statement of Account. Keep it, take an alternate, or re-roll.",
+  "options": [
+    {
+      "id": "assigned",
+      "label": "The Statement of Account",
+      "kicker": "THE ROLL",
+      "lineage": "GOV.UK Design System, HMRC self-assessment, statutory annual statements",
+      "thesis": "Your portfolio as an official statement of account: black on white, nothing sold to you, every figure accountable.",
+      "palette": [
+        "#0b0c0c",
+        "#ffffff",
+        "#ffdd00",
+        "#00703c",
+        "#d4351c"
+      ],
+      "materials": [
+        "statutory paper",
+        "2px black keylines",
+        "focus-yellow highlight"
+      ],
+      "viewport": "A ruled sheet headed 'Statement of account'. The net result sits alone as the largest figure on the page with its own rule above and below. Positions follow as a plain ruled table, no boxes, no panels, the primary action a black bar at the top right.",
+      "risk": "Reads bureaucratic and cold if the type is set timidly. It only works if the scale is confident and the white space generous; a literal tax-form pastiche would fail.",
+      "raised": [
+        {
+          "from": "Deployable sheet",
+          "raise": "A position row and its opened trade sheet are the same structure at two scales, not a row and a separate panel."
+        },
+        {
+          "from": "Cracktro queue",
+          "raise": "Nothing is ever enclosed. Hierarchy comes from rules, weight and space; no card, no box, anywhere."
+        },
+        {
+          "from": "Phosphor terminal",
+          "raise": "Hierarchy from case, indentation and one measure, never from inflating type size."
+        },
+        {
+          "from": "Gravity-rain garden",
+          "raise": "Colour encodes one law absolutely: a figure is coloured only when it is money you made or lost."
+        }
+      ]
+    },
+    {
+      "id": "model-pick",
+      "label": "The Pink Paper",
+      "kicker": "IMPECCABLE\u2019S PICK",
+      "lineage": "Financial Times print edition",
+      "thesis": "Your portfolio set as the day's market page on salmon newsprint.",
+      "palette": [
+        "#fff1e5",
+        "#33302e",
+        "#0d7680",
+        "#990f3d"
+      ],
+      "materials": [
+        "newsprint",
+        "hairline column rules",
+        "standfirst type"
+      ],
+      "viewport": "A broadsheet market page. Net result as the standfirst, positions as dense ruled listings in two columns, the replay running as a boxed feature down the right.",
+      "risk": "Also where most runs land once they leave the dark terminal, and salmon-plus-serif is the FT's house style rather than yours. Familiar and effective, but recognisably borrowed."
+    },
+    {
+      "id": "challenger-miura",
+      "label": "Deployable Sheet",
+      "verdict": "declined",
+      "lineage": "Miura-fold deployable structures",
+      "thesis": "A hand-sized packet that opens in one pull into a rigid tessellated field.",
+      "palette": [
+        "#ffffff",
+        "#c8a227",
+        "#8a8a8a",
+        "#b9cbe0"
+      ],
+      "materials": [
+        "scored paper",
+        "gold foil"
+      ],
+      "viewport": "A compact packet that deploys into a crease field of linked cells.",
+      "case": "Fuses poorly: a UK retail investor does not know origami engineering by heart, and a parallelogram grid fights tabular money.",
+      "kept": "Structural honesty at every scale.",
+      "risk": "Geometry that decorates rather than encodes."
+    },
+    {
+      "id": "challenger-cracktro",
+      "label": "Cracktro Queue",
+      "verdict": "declined",
+      "lineage": "demoscene cracktro title screens",
+      "thesis": "Rank is depth: bitmap baselines drifting over a void, nothing ever enclosed.",
+      "palette": [
+        "#000000",
+        "#efefe6",
+        "#8a8a80",
+        "#ffb000"
+      ],
+      "materials": [
+        "bitmap type",
+        "drifting dust layers"
+      ],
+      "viewport": "Ivory baselines on black, the frontmost item brightest and widest.",
+      "case": "Fuses poorly: the demoscene is not this audience's world, and amber on black is the dark terminal already rejected three times.",
+      "kept": "Enclosure is never used; hierarchy comes from one continuous system.",
+      "risk": "Lands back in the rejected rut wearing a different badge."
+    },
+    {
+      "id": "challenger-phosphor",
+      "label": "Phosphor Terminal",
+      "verdict": "declined",
+      "lineage": "P1 green-phosphor terminals",
+      "thesis": "An 80-column field on curved glass where text glows and lingers.",
+      "palette": [
+        "#0a0f0a",
+        "#33ff66",
+        "#1d6b33"
+      ],
+      "materials": [
+        "curved glass",
+        "scanline bloom"
+      ],
+      "viewport": "A fixed 80-column monospaced field, hierarchy from indentation and case.",
+      "case": "Fuses poorly: this is precisely the category rut, it is monospace-only which you ruled out, and it is the third dark theme you rejected.",
+      "kept": "Hierarchy from case and indentation, on one measure.",
+      "risk": "Everything already rejected, restated."
+    },
+    {
+      "id": "challenger-rain",
+      "label": "Gravity-Rain Garden",
+      "verdict": "declined",
+      "lineage": "surreal impossible-world illustration",
+      "thesis": "Rain falls according to the colour of each cloud; colour is a physical law.",
+      "palette": [
+        "#4a5a52",
+        "#2b6cb0",
+        "#c53030",
+        "#111111"
+      ],
+      "materials": [
+        "painted dusk",
+        "directional rain"
+      ],
+      "viewport": "A garden of local gravities, labels bending along each field.",
+      "case": "Fuses badly: bending baselines over a profit-and-loss statement is a defect, and the audience identifies with none of it.",
+      "kept": "Colour encodes one law, absolutely.",
+      "risk": "Destroys legibility of the one thing the product exists to state."
+    }
+  ],
+  "reroll": {
+    "registers": [
+      "safer",
+      "bolder"
+    ]
+  },
+  "canon": true,
+  "canonCard": {
+    "label": "The trading terminal",
+    "thesis": "What this category ships: a dark dense terminal, executed impeccably.",
+    "palette": [
+      "#0d1117",
+      "#e6edf3",
+      "#3fb950",
+      "#f85149"
+    ],
+    "materials": [
+      "dense grid",
+      "candlesticks",
+      "monospaced figures"
+    ],
+    "viewport": "Near-black multi-pane layout, green and red everywhere, the arrangement a trader expects.",
+    "risk": "Indistinguishable from every other trading tool, and the direction already rejected three times here."
+  },
+  "steer": true
+}

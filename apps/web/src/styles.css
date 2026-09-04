@@ -1,41 +1,44 @@
 :root {
   /*
-   * Ink and ledger. The ground is near-black; panels are barely lifted off it and
-   * defined by a hairline rather than a fill.
+   * The Statement of Account.
    *
-   * Colour is rationed. Interaction is signalled by value, not hue: selection and
-   * primary actions are chalk on ink. The only hues in the interface are profit,
-   * loss, and the brass used for the path not taken.
+   * Statutory paper: black ink on white, read at a desk under lamplight. Colour is
+   * lawful, not decorative — green and red appear on money and nowhere else, and
+   * the yellow is the focus state, borrowed from the one design system that treats
+   * keyboard focus as a civic obligation.
+   *
+   * Nothing is enclosed. Structure is carried by rules and weight.
    */
-  --bg: #06070a;
-  --bg-pane: #0a0c11;
-  --bg-elevated: #12151c;
-  --surface: 12 14 19;
-  --border: #1b1f28;
-  --border-strong: #2a3039;
-  --text: #e9ebf0;
-  --text-muted: #79808f;
+  --bg: #ffffff;
+  --bg-pane: #ffffff;
+  --bg-elevated: #f3f2f1;
+  --surface: 255 255 255;
+  --ink: #0b0c0c;
+  --border: #b1b4b6;
+  --border-strong: #0b0c0c;
+  --text: #0b0c0c;
+  --text-muted: #505a5f;
 
-  /* Interaction: achromatic on purpose. */
-  --accent: #e9ebf0;
-  --accent-rgb: 233 235 240;
-  --accent-dim: #333a46;
-  --accent-contrast: #06070a;
+  /* Interaction: black bars and a yellow focus state. */
+  --accent: #0b0c0c;
+  --accent-rgb: 11 12 12;
+  --accent-dim: #505a5f;
+  --accent-contrast: #ffffff;
+  --focus: #ffdd00;
 
-  /* Data only. */
-  --up: #4ec08a;
-  --up-rgb: 78 192 138;
-  --down: #e05c62;
-  --down-rgb: 224 92 98;
-  --danger: #e05c62;
-  --warn: #c9a227;
-  --brass: #c9a227;
-  --brass-rgb: 201 162 39;
+  /* Money, and nothing else. */
+  --up: #00703c;
+  --up-rgb: 0 112 60;
+  --down: #d4351c;
+  --down-rgb: 212 53 28;
+  --danger: #d4351c;
+  --warn: #b58840;
+  --brass: #b58840;
+  --brass-rgb: 181 136 64;
 
-  --font: "Instrument Sans", system-ui, sans-serif;
-  /* One family throughout. Figures align on tabular numerals, not a mono face. */
-  --mono: "Instrument Sans", system-ui, sans-serif;
-  --radius: 6px;
+  --font: "Public Sans", system-ui, sans-serif;
+  --mono: "Public Sans", system-ui, sans-serif;
+  --radius: 0px;
 }
 
 *,
@@ -3355,20 +3358,20 @@ button.symbol-suggestion.active {
 }
 
 .whatif-headline {
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--text-muted);
-  border-radius: 10px;
-  padding: 0.75rem 0.9rem;
-  background: rgb(var(--surface) / 0.55);
+  border: 0;
+  border-top: 2px solid var(--ink);
+  border-radius: 0;
+  padding: 0.8rem 0 0.9rem;
+  background: transparent;
   margin-bottom: 0.85rem;
 }
 
-.whatif-headline.bad {
-  border-left-color: var(--down);
+.whatif-headline.bad .whatif-headline-value {
+  color: var(--down);
 }
 
-.whatif-headline.good {
-  border-left-color: var(--up);
+.whatif-headline.good .whatif-headline-value {
+  color: var(--up);
 }
 
 .whatif-headline-value {
@@ -3493,4 +3496,340 @@ button.symbol-suggestion.active {
   color: var(--text-muted);
   font-size: 0.75rem;
   line-height: 1.5;
+}
+
+/* A statement states its balance on a ruled line: label, leader, figure. */
+.account-line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.account-line-label {
+  font-size: 1rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.account-line-leader {
+  flex: 1;
+  height: 1px;
+  border-bottom: 2px dotted var(--border);
+  transform: translateY(-0.35em);
+}
+
+.account-line .pnl-hero-value {
+  margin: 0;
+  white-space: nowrap;
+}
+
+
+/* ==========================================================================
+   The Statement of Account
+   --------------------------------------------------------------------------
+   Nothing is enclosed. A box claims its contents are separate, and on a
+   statement nothing is separate: every figure belongs to the same account.
+   Structure is carried by rules and weight only.
+   ========================================================================== */
+
+::selection {
+  background: var(--focus);
+  color: var(--ink);
+}
+
+html {
+  accent-color: var(--ink);
+  caret-color: var(--ink);
+  scrollbar-color: var(--border) transparent;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.tabular,
+.stat-value,
+table td,
+table th {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Statutory focus: a yellow field under a black bar, never a soft glow. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid transparent;
+  background-color: var(--focus);
+  box-shadow: 0 -2px var(--focus), 0 4px var(--ink);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.card,
+.pnl-hero,
+.pnl-hero-panel,
+.pnl-chart,
+.whatif-card,
+.whatif-chart,
+.pnl-note,
+.guest-banner,
+.hunt-top-card,
+.hunt-feature-card,
+.pnl-detail-mark,
+.stat-card {
+  background: transparent !important;
+  border: 0;
+  border-top: 2px solid var(--ink);
+  border-radius: 0;
+  padding: 0.7rem 0 1rem;
+  box-shadow: none;
+}
+
+.pnl-hero {
+  border-top: 4px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+  padding: 1rem 0 1.1rem;
+}
+
+.drawer-panel {
+  background: var(--bg);
+  border: 0;
+  border-left: 1px solid var(--ink);
+  border-radius: 0;
+  box-shadow: -24px 0 48px rgba(11, 12, 12, 0.18);
+}
+
+.login-card {
+  background: var(--bg);
+  border: 2px solid var(--ink);
+  border-radius: 0;
+  padding: 2rem;
+  box-shadow: none;
+}
+
+.login-page {
+  background: var(--bg);
+}
+
+.btn {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  font-weight: 500;
+  padding: 0.4rem 0.8rem;
+}
+
+.btn:hover {
+  background: var(--bg-elevated);
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.btn-primary {
+  background: var(--ink);
+  color: var(--accent-contrast);
+  border-color: var(--ink);
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  background: #22282a;
+  color: var(--accent-contrast);
+  border-color: #22282a;
+}
+
+.field input,
+.field select,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+select,
+textarea {
+  background: var(--bg);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: 0;
+}
+
+.intel-table th,
+.whatif-table th {
+  border-bottom: 2px solid var(--ink);
+  color: var(--ink);
+  font-weight: 600;
+  background: transparent;
+}
+
+.intel-table td,
+.whatif-table td {
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+}
+
+.intel-table tbody tr:hover td {
+  background: var(--bg-elevated);
+}
+
+.pnl-row-selected td {
+  background: var(--bg-elevated);
+  box-shadow: inset 4px 0 0 var(--ink);
+}
+
+.intel-table-wrap {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.sidebar {
+  background: transparent;
+  border-right: 1px solid var(--border);
+}
+
+.sidebar-nav a {
+  color: var(--text-muted);
+  border-left: 4px solid transparent;
+}
+
+.sidebar-nav a:hover {
+  color: var(--ink);
+}
+
+.sidebar-nav a.active {
+  color: var(--ink);
+  border-left-color: var(--ink);
+  font-weight: 700;
+}
+
+.pnl-status,
+.badge,
+.pnl-trade-type {
+  border-radius: 0;
+  border: 0;
+  font-weight: 600;
+  padding: 0.1rem 0.4rem;
+}
+
+.pnl-status-open,
+.pnl-trade-buy {
+  background: #cce2d8;
+  color: #005a30;
+}
+
+.pnl-status-closed,
+.pnl-trade-sell {
+  background: #f6d7d2;
+  color: #942514;
+}
+
+.pnl-hero-value {
+  font-size: clamp(2.4rem, 5vw, 4rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.pnl-head h1 {
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.hunt-chip,
+.pnl-filters button {
+  border-radius: 0;
+}
+
+
+/* --- batched inspection fixes ------------------------------------------- */
+
+/* The balance must never run past the sheet edge. */
+.account-line {
+  flex-wrap: wrap;
+  row-gap: 0.2rem;
+}
+
+.account-line .pnl-hero-value {
+  font-size: clamp(1.9rem, 8vw, 4rem);
+}
+
+@media (max-width: 640px) {
+  .account-line-leader {
+    display: none;
+  }
+
+  .account-line .pnl-hero-value {
+    width: 100%;
+  }
+}
+
+/* Every control squares off; a rounded chip is from the discarded world. */
+.pnl-toolbar button,
+.pnl-filters button,
+.hunt-chip,
+.hunt-tabs button,
+.hunt-filters button,
+.hunt-view-tabs button,
+.symbol-intel-tabs button,
+.app-search,
+input,
+select,
+textarea,
+.btn {
+  border-radius: 0;
+}
+
+/* An input without a type attribute is still a field. */
+input,
+textarea,
+select {
+  background: var(--bg);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+}
+
+.app-search {
+  border: 2px solid var(--border);
+  color: var(--text-muted);
+}
+
+/* A selected filter is inked in, not tinted. */
+.pnl-filters button.active,
+.hunt-chip.active,
+.hunt-tabs button.active,
+.hunt-filters button.active {
+  background: var(--ink);
+  color: var(--accent-contrast);
+  border-color: var(--ink);
+  font-weight: 600;
+}
+
+
+/* The verdict is stated, not badged: a rule above it, the money in its own
+   colour, and no accent tab down the side. */
+.whatif-headline {
+  border: 0 !important;
+  border-top: 2px solid var(--ink) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: 0.8rem 0 0.9rem;
+}
+
+.whatif-headline.bad .whatif-headline-value {
+  color: var(--down);
+}
+
+.whatif-headline.good .whatif-headline-value {
+  color: var(--up);
+}
+
+.whatif-headline-value {
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }

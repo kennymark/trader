@@ -211,8 +211,7 @@ export function PortfolioPage() {
     <div className="pnl-page">
       <div className="pnl-head">
         <div>
-          <p className="pnl-kicker">Freetrade ISA</p>
-          <h1>Trading paper</h1>
+          <h1>Statement of account</h1>
           <p className="page-lead">
             Profit, loss, and what’s still open — all in account currency.
           </p>
@@ -390,9 +389,12 @@ function PaperBody({
 
       <section className="pnl-hero-grid">
         <div className="pnl-hero">
-          <div className="pnl-kicker">Net result</div>
-          <div className={`pnl-hero-value tabular ${pnlClass(performance.totalPnl)}`}>
-            {moneyHero(performance.totalPnl)}
+          <div className="account-line">
+            <span className="account-line-label">Net result</span>
+            <span className="account-line-leader" aria-hidden="true" />
+            <span className={`pnl-hero-value tabular ${pnlClass(performance.totalPnl)}`}>
+              {moneyHero(performance.totalPnl)}
+            </span>
           </div>
           <p className="muted">
             {moneyHero(performance.realizedPnl + performance.dividends)} realized &amp; dividends
