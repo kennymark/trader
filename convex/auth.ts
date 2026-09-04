@@ -24,15 +24,6 @@ export const createAuth = (ctx: GenericCtx<DataModel>) =>
       enabled: true,
       requireEmailVerification: false,
     },
-    socialProviders:
-      process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-        ? {
-            google: {
-              clientId: process.env.GOOGLE_CLIENT_ID,
-              clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-            },
-          }
-        : undefined,
     plugins: [crossDomain({ siteUrl }), convex({ authConfig })],
   });
 

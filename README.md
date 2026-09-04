@@ -4,7 +4,7 @@ Track a watchlist, import your broker history, and find out what your selling ac
 
 **Live: https://trader-eight-iota.vercel.app**
 
-Guests can browse market data and search; a portfolio needs a sign-in. Auth is Better Auth running inside Convex, with email and password enabled and Google optional.
+Guests can browse market data and search; a portfolio needs a sign-in. Auth is Better Auth running inside Convex, using email and password.
 
 ![Watchlist and chart](docs/screenshots/watchlist.png)
 
@@ -82,7 +82,6 @@ npx convex env set BETTER_AUTH_SECRET "$(openssl rand -hex 32)"
 |-----------------|---------|
 | `SITE_URL` | Origin the app is served from; Better Auth trusts it |
 | `BETTER_AUTH_SECRET` | Session secret |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Optional Google sign-in |
 | `RESEND_API_KEY` / `EMAIL_FROM` | Email alerts (dry-runs if unset) |
 | `TELEGRAM_BOT_TOKEN` / `TELEGRAM_BOT_USERNAME` | Telegram bot |
 | `TELEGRAM_WEBHOOK_SECRET` | Optional webhook header check |

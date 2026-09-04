@@ -14,17 +14,6 @@ export function LoginPage({ next = "/" }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  const googleEnabled = Boolean(import.meta.env.VITE_GOOGLE_AUTH !== "false");
-  const callbackURL = `${window.location.origin}${next.startsWith("/") ? next : `/${next}`}`;
-
-  async function signInGoogle() {
-    setError(null);
-    await authClient.signIn.social({
-      provider: "google",
-      callbackURL,
-    });
-  }
-
   async function submitEmail(e: React.FormEvent) {
     e.preventDefault();
     setPending(true);
@@ -56,15 +45,6 @@ export function LoginPage({ next = "/" }: Props) {
           Sign in to save your watchlist, set price alerts, and connect email, Telegram, or
           Twist.
         </p>
-
-        {googleEnabled && (
-          <>
-            <button type="button" className="btn btn-primary" onClick={signInGoogle}>
-              Continue with Google
-            </button>
-            <div className="divider">or email</div>
-          </>
-        )}
 
         <form onSubmit={submitEmail}>
           {mode === "signup" && (
