@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import type { AlertBaseline, AlertKind } from "@trader/shared";
 import { authClient } from "../lib/auth";
@@ -148,8 +149,8 @@ export function SymbolAlerts({ symbol, embedded = false }: Props) {
           ))}
           {!enabledChannels.length && (
             <span className="muted">
-              No delivery set up for {symbol} yet — add one under Delivery below, then a rule
-              has somewhere to send.
+              No delivery set up for {symbol} yet. Add one in{" "}
+              <Link to="/settings">Settings</Link>, then a rule has somewhere to send.
             </span>
           )}
         </div>

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   fetchAlertEvents,
   fetchAlerts,
@@ -10,9 +10,11 @@ import {
   deleteChannel,
   updateChannel,
   fetchFreetrade,
+  fetchWatchlist,
   importFreetradeCsv,
   disconnectFreetrade,
 } from "../lib/queries";
+import { SymbolChannels } from "../components/SymbolChannels";
 import { formatDateTime } from "../lib/dates";
 import { describeRule, describeRuleDetail } from "../lib/alertText";
 import { authClient } from "../lib/auth";
@@ -578,6 +580,95 @@ function IntelligenceSection() {
   );
 }
 
+function DeliverySection({
+  channels,
+  loading,
+  onToggle,
+  onRemove,
+}: {
+  channels: NotificationChannel[];
+  loading: boolean;
+  onToggle: (id: string, enabled: boolean) => void;
+  onRemove: (id: string) => void;
+}) {
+  const watchlist = useQuery({ queryKey: ["watchlist", "server"], queryFn: fetchWatchlist });
+
+  // Every stock you could set delivery up for: the watchlist, plus any name
+  // that already has one, so an old channel never becomes unreachable.
+  const symbols = useMemo(() => {
+    const set = new Set<string>();
+    for (const w of watchlist.data ?? []) set.add(w.symbol.toUpperCase());
+    for (const c of channels) if (c.symbol) set.add(c.symbol.toUpperCase());
+    return [...set].sort();
+  }, [watchlist.data, channels]);
+
+  const [symbol, setSymbol] = useState<string>("");
+  const selected = symbol && symbols.includes(symbol) ? symbol : symbols[0] || "";
+
+  if (!symbols.length) {
+    return (
+      <p className="muted">
+        Add a stock to your watchlist first — a delivery belongs to a name.
+      </p>
+    );
+  }
+
+  return (
+    <>
+      <Field label="Set up delivery for" hint="Each stock has its own deliveries.">
+        <select
+          value={selected}
+          onChange={(e) => setSymbol(e.target.value)}
+          className="setting-select"
+        >
+          {symbols.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+      </Field>
+
+      {selected ? <SymbolChannels key={selected} symbol={selected} embedded /> : null}
+
+      <h3 className="settings-sub">Everything set up</h3>
+      <div className="card-list">
+        {channels.map((ch) => (
+          <div className="card" key={ch.id}>
+            <div className="card-row">
+              <div>
+                <div className="settings-card-title">
+                  {ch.symbol ? ch.symbol : <span className="muted">Unassigned</span>} · {ch.label}
+                </div>
+                <div className="muted">
+                  <span className={`badge ${ch.enabled ? "badge-on" : ""}`}>{ch.type}</span>{" "}
+                  {ch.type === "email" && String(ch.config.address || "")}
+                  {ch.type === "telegram" && `chat ${String(ch.config.chatId || "")}`}
+                  {ch.type === "twist" &&
+                    `thread ${String(ch.config.conversationId || ch.config.threadId || "")}`}
+                </div>
+              </div>
+              <div className="settings-card-actions">
+                <button type="button" className="btn" onClick={() => onToggle(ch.id, !ch.enabled)}>
+                  {ch.enabled ? "Disable" : "Enable"}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={() => onRemove(ch.id)}
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+        {!channels.length && !loading && <div className="muted">No deliveries yet.</div>}
+      </div>
+    </>
+  );
+}
+
 export function SettingsPage() {
   const qc = useQueryClient();
 
@@ -635,7 +726,7 @@ export function SettingsPage() {
           <Section
             id="alerts"
             title="Notifications"
-            lead="Rules decide when you hear about a stock; deliveries decide where the message goes. Both are set per stock from its Notify me drawer — this is everything you have, in one place."
+            lead="Rules decide when you hear about a stock and are set from its Notify me drawer. Deliveries decide where the message goes, and are set up here."
           >
             <AlertDefaults />
 
@@ -678,48 +769,12 @@ export function SettingsPage() {
             </div>
 
             <h3 className="settings-sub">Delivery</h3>
-            <div className="card-list">
-              {(channels.data as NotificationChannel[] | undefined)?.map((ch) => (
-                <div className="card" key={ch.id}>
-                  <div className="card-row">
-                    <div>
-                      <div className="settings-card-title">
-                        {ch.symbol ? ch.symbol : <span className="muted">Unassigned</span>} ·{" "}
-                        {ch.label}
-                      </div>
-                      <div className="muted">
-                        <span className={`badge ${ch.enabled ? "badge-on" : ""}`}>{ch.type}</span>{" "}
-                        {ch.type === "email" && String(ch.config.address || "")}
-                        {ch.type === "telegram" && `chat ${String(ch.config.chatId || "")}`}
-                        {ch.type === "twist" &&
-                          `thread ${String(ch.config.conversationId || ch.config.threadId || "")}`}
-                      </div>
-                    </div>
-                    <div className="settings-card-actions">
-                      <button
-                        type="button"
-                        className="btn"
-                        onClick={() =>
-                          updateChannelMut.mutate({ id: ch.id, enabled: !ch.enabled })
-                        }
-                      >
-                        {ch.enabled ? "Disable" : "Enable"}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-danger"
-                        onClick={() => deleteChannelMut.mutate(ch.id)}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {!channels.data?.length && !channels.isLoading && (
-                <div className="muted">No channels yet.</div>
-              )}
-            </div>
+            <DeliverySection
+              channels={(channels.data as NotificationChannel[] | undefined) ?? []}
+              loading={channels.isLoading}
+              onToggle={(id, enabled) => updateChannelMut.mutate({ id, enabled })}
+              onRemove={(id) => deleteChannelMut.mutate(id)}
+            />
 
             <h3 className="settings-sub">Recent firings</h3>
             <div className="card-list">

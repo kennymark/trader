@@ -4866,29 +4866,6 @@ textarea:focus-visible {
   color: var(--ink);
 }
 
-.notify-part + .notify-part {
-  margin-top: 2.25rem;
-  padding-top: 1.75rem;
-  border-top: 1px solid var(--border);
-}
-
-.notify-part-title {
-  margin: 0 0 0.3rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.notify-part-lead {
-  margin: 0 0 1rem;
-  font-size: 0.88rem;
-  line-height: 1.55;
-  max-width: 52ch;
-}
-
-/* The two bodies keep their own top margins from the standalone layout. */
-.notify-part .symbol-alerts {
-  margin-top: 0;
+.setting-select {
+  min-width: 8rem;
 }

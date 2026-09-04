@@ -2,15 +2,13 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { authClient } from "../lib/auth";
 import { AUTH_ENABLED } from "../lib/features";
 import { SymbolAlerts } from "./SymbolAlerts";
-import { SymbolChannels } from "./SymbolChannels";
 
 type Props = { symbol: string };
 
 /**
- * A rule and a channel are two halves of one sentence — notify me when X, via
- * Y — and neither is usable without the other. They were two drawers that
- * spent their copy pointing at each other; this is the one surface they were
- * always describing.
+ * Rules for one stock. Delivery is set up once in Settings and reused, so it
+ * does not repeat itself in every stock's drawer — this surface only decides
+ * when you hear about this name, not where the message goes.
  */
 export function SymbolNotifications({ symbol }: Props) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -25,7 +23,7 @@ export function SymbolNotifications({ symbol }: Props) {
     return (
       <div className="notify">
         <p className="notify-lead">
-          Sign in to be told when {symbol} moves, and to choose where the message goes.
+          Sign in to be told when {symbol} moves.
         </p>
         <Link to="/login" className="btn btn-primary" search={{ next: pathname }}>
           Sign in
@@ -37,23 +35,11 @@ export function SymbolNotifications({ symbol }: Props) {
   return (
     <div className="notify">
       <p className="notify-lead">
-        A rule decides <em>when</em> you hear about {symbol}. A delivery decides{" "}
-        <em>where</em> the message arrives. A rule needs at least one.
+        A rule decides <em>when</em> you hear about {symbol}. Where the message goes is set in{" "}
+        <Link to="/settings">Settings</Link>.
       </p>
 
-      <section className="notify-part">
-        <h3 className="notify-part-title">Rules</h3>
-        <SymbolAlerts key={`al-${symbol}`} symbol={symbol} embedded />
-      </section>
-
-      <section className="notify-part">
-        <h3 className="notify-part-title">Delivery</h3>
-        <p className="muted notify-part-lead">
-          Email, Telegram, or Twist, attached to {symbol}. A rule can only notify a delivery
-          listed here.
-        </p>
-        <SymbolChannels key={`ch-${symbol}`} symbol={symbol} embedded />
-      </section>
+      <SymbolAlerts key={`al-${symbol}`} symbol={symbol} embedded />
     </div>
   );
 }
