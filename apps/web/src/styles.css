@@ -4998,3 +4998,72 @@ textarea:focus-visible {
 .md td {
   font-variant-numeric: tabular-nums;
 }
+
+/* --- Confirmation ---------------------------------------------------------
+   Destructive actions state the consequence and wait. The dialog is the one
+   thing above everything else, so it sits above the chat dock and the drawer. */
+
+.confirm-root {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.confirm-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: rgb(0 0 0 / 0.6);
+  cursor: default;
+}
+
+.confirm-panel {
+  position: relative;
+  width: min(30rem, 100%);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  /* Shadow is licensed for overlays, and nothing floats higher than this. */
+  box-shadow: 0 24px 60px rgb(0 0 0 / 0.6);
+  padding: 1.4rem 1.5rem 1.25rem;
+}
+
+.confirm-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.confirm-body {
+  margin: 0 0 1.4rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+/* The base `.btn { color: var(--ink) }` in this world's override block sits
+   after the original `.btn-danger` and has the same specificity, so it had been
+   silently winning: every Remove, Delete and Disconnect in the app rendered
+   identically to a harmless button. A destructive action is outlined in the
+   loss colour, and fills with it on hover — distinct from both the plain
+   button and the inked-in primary. */
+.btn-danger {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.btn-danger:hover {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: var(--accent-contrast);
+}

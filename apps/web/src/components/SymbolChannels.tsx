@@ -10,6 +10,7 @@ import {
   updateChannel,
 } from "../lib/queries";
 import { channelMatchesSymbol } from "../lib/channelSymbol";
+import { useConfirm } from "./ConfirmProvider";
 
 type Props = {
   symbol: string;
@@ -18,6 +19,7 @@ type Props = {
 
 export function SymbolChannels({ symbol, embedded = false }: Props) {
   const qc = useQueryClient();
+  const confirm = useConfirm();
   const { data: session, isPending: sessionPending } = authClient.useSession();
   const isAuthed = !AUTH_ENABLED || Boolean(session?.user);
 
@@ -97,7 +99,19 @@ export function SymbolChannels({ symbol, embedded = false }: Props) {
                 <button
                   type="button"
                   className="btn btn-danger"
-                  onClick={() => deleteMut.mutate(ch.id)}
+                  onClick={async () => {
+                    const ok = await confirm({
+                      title: `Remove ${ch.label}?`,
+                      body: (
+                        <>
+                          Alerts on {symbol} that send here will have one less delivery, and
+                          any rule left with none will stop reaching you.
+                        </>
+                      ),
+                      confirmLabel: "Remove delivery",
+                    });
+                    if (ok) deleteMut.mutate(ch.id);
+                  }}
                 >
                   Remove
                 </button>

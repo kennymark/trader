@@ -5,6 +5,7 @@ import { authClient } from "../lib/auth";
 import { AUTH_ENABLED } from "../lib/features";
 import { askChat, clearChat, fetchChatHistory, fetchChatStatus } from "../lib/queries";
 import { Markdown } from "./Markdown";
+import { useConfirm } from "./ConfirmProvider";
 
 // A mix of both kinds, so it is visible that the assistant reads live market
 // data as well as the book.
@@ -21,6 +22,7 @@ const PROMPTS = [
  */
 export function PortfolioChat() {
   const qc = useQueryClient();
+  const confirm = useConfirm();
   const [draft, setDraft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const { data: session, isPending: sessionPending } = authClient.useSession();
@@ -171,7 +173,14 @@ export function PortfolioChat() {
           <button
             type="button"
             className="btn"
-            onClick={() => wipe.mutate()}
+            onClick={async () => {
+              const ok = await confirm({
+                title: "Clear this conversation?",
+                body: `All ${messages.length} messages are deleted. This cannot be undone.`,
+                confirmLabel: "Clear conversation",
+              });
+              if (ok) wipe.mutate();
+            }}
             disabled={wipe.isPending}
           >
             Clear

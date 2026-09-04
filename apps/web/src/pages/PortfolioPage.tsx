@@ -23,6 +23,7 @@ import {
 } from "../lib/queries";
 import { formatDate, formatDateTime } from "../lib/dates";
 import { CacheNotice } from "../components/CacheNotice";
+import { useConfirm } from "../components/ConfirmProvider";
 import { WhatIfPanel } from "../components/WhatIfPanel";
 
 type Filter = "all" | "winners" | "losers" | "open" | "closed" | "never_sold";
@@ -100,6 +101,7 @@ function sortArrow(col: SortKey, sort: SortKey, dir: SortDir): string {
 
 export function PortfolioPage() {
   const qc = useQueryClient();
+  const confirm = useConfirm();
   const inputRef = useRef<HTMLInputElement>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState<SortKey>("pnl");
@@ -230,7 +232,19 @@ export function PortfolioPage() {
             type="button"
             className="btn btn-primary"
             disabled={importMut.isPending}
-            onClick={() => inputRef.current?.click()}
+            onClick={async () => {
+              // An import replaces the previous one rather than merging into it.
+              if (connection) {
+                const ok = await confirm({
+                  title: "Replace the imported history?",
+                  body: `The current import — ${connection.transactionCount} activity rows — is discarded and rebuilt from the new file. Upload a full export, not a slice.`,
+                  confirmLabel: "Choose a file",
+                  tone: "neutral",
+                });
+                if (!ok) return;
+              }
+              inputRef.current?.click();
+            }}
           >
             {importMut.isPending ? "Importing…" : connection ? "Re-import CSV" : "Import CSV"}
           </button>

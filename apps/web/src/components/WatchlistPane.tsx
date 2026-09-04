@@ -6,6 +6,7 @@ import { authClient } from "../lib/auth";
 import { AUTH_ENABLED } from "../lib/features";
 import { getGuestWatchlist, removeGuestSymbol } from "../lib/guestWatchlist";
 import { fetchQuotes, fetchWatchlist, removeWatchlist } from "../lib/queries";
+import { useConfirm } from "./ConfirmProvider";
 import { usePreferences } from "../lib/preferences";
 
 type Props = {
@@ -21,6 +22,7 @@ export function WatchlistPane({
   onSymbolsLoaded,
 }: Props) {
   const qc = useQueryClient();
+  const confirm = useConfirm();
   const { prefs } = usePreferences();
   const { data: session, isPending: sessionPending } = authClient.useSession();
   const isAuthed = !AUTH_ENABLED || Boolean(session?.user);
@@ -84,7 +86,19 @@ export function WatchlistPane({
     onSuccess: () => qc.invalidateQueries({ queryKey: ["watchlist"] }),
   });
 
-  function removeItem(item: WatchlistItem) {
+  async function removeItem(item: WatchlistItem) {
+    const ok = await confirm({
+      title: `Remove ${item.symbol}?`,
+      body: (
+        <>
+          It leaves your watchlist. Any alert rules and deliveries you set up for{" "}
+          {item.symbol} stay where they are.
+        </>
+      ),
+      confirmLabel: `Remove ${item.symbol}`,
+    });
+    if (!ok) return;
+
     if (useGuest) {
       removeGuestSymbol(item.id);
       qc.invalidateQueries({ queryKey: ["watchlist"] });
@@ -102,7 +116,7 @@ export function WatchlistPane({
           <button
             type="button"
             className="btn btn-ghost pane-header-action"
-            onClick={() => removeItem(selectedItem)}
+            onClick={() => void removeItem(selectedItem)}
           >
             Remove {selectedItem.symbol}
           </button>

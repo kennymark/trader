@@ -15,6 +15,7 @@ import {
   disconnectFreetrade,
 } from "../lib/queries";
 import { SymbolChannels } from "../components/SymbolChannels";
+import { useConfirm } from "../components/ConfirmProvider";
 import { formatDateTime } from "../lib/dates";
 import { describeRule, describeRuleDetail } from "../lib/alertText";
 import { authClient } from "../lib/auth";
@@ -159,6 +160,7 @@ function fmtNum(n: number | null | undefined, digits = 2) {
 
 function FreetradeSection() {
   const qc = useQueryClient();
+  const confirm = useConfirm();
   const inputRef = useRef<HTMLInputElement>(null);
   const [syncWatchlist, setSyncWatchlist] = useState(true);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -232,7 +234,19 @@ function FreetradeSection() {
               type="button"
               className="btn btn-primary"
               disabled={importMut.isPending}
-              onClick={() => inputRef.current?.click()}
+              onClick={async () => {
+                // An import replaces the previous one rather than merging.
+                if (connection) {
+                  const ok = await confirm({
+                    title: "Replace the imported history?",
+                    body: `The current import — ${connection.transactionCount} activity rows and ${connection.holdingCount} holdings — is discarded and rebuilt from the new file. Upload a full export, not a slice.`,
+                    confirmLabel: "Choose a file",
+                    tone: "neutral",
+                  });
+                  if (!ok) return;
+                }
+                inputRef.current?.click();
+              }}
             >
               {importMut.isPending ? "Importing…" : connection ? "Re-import CSV" : "Import CSV"}
             </button>
@@ -241,7 +255,14 @@ function FreetradeSection() {
                 type="button"
                 className="btn btn-danger"
                 disabled={disconnectMut.isPending}
-                onClick={() => disconnectMut.mutate()}
+                onClick={async () => {
+                  const ok = await confirm({
+                    title: "Disconnect Freetrade?",
+                    body: `Every imported transaction and holding is deleted — ${connection?.transactionCount ?? 0} activity rows and ${connection?.holdingCount ?? 0} holdings. Your P&L, the what-if replays and portfolio scoring go with them. Your watchlist and alerts stay.`,
+                    confirmLabel: "Disconnect and delete",
+                  });
+                  if (ok) disconnectMut.mutate();
+                }}
               >
                 Disconnect
               </button>
@@ -410,6 +431,7 @@ function AccountSection() {
 }
 
 function DisplaySection() {
+  const confirm = useConfirm();
   const { prefs } = usePreferences();
   const save = useSavePreferences();
   const reset = useResetPreferences();
@@ -456,7 +478,20 @@ function DisplaySection() {
         label="All preferences"
         hint="Restores every setting on this page, including the alert defaults below."
       >
-        <button type="button" className="btn" disabled={busy} onClick={() => reset.mutate()}>
+        <button
+          type="button"
+          className="btn"
+          disabled={busy}
+          onClick={async () => {
+            const ok = await confirm({
+              title: "Restore every default?",
+              body: "Chart range, opening tab, quote refresh and the alert defaults all go back to how they shipped. Nothing else is touched.",
+              confirmLabel: "Restore defaults",
+              tone: "neutral",
+            });
+            if (ok) reset.mutate();
+          }}
+        >
           {reset.isPending ? "Restoring…" : "Restore defaults"}
         </button>
       </Field>
@@ -528,6 +563,7 @@ function AlertDefaults() {
 
 function IntelligenceSection() {
   const qc = useQueryClient();
+  const confirm = useConfirm();
   const { prefs } = usePreferences();
   const save = useSavePreferences();
 
@@ -571,7 +607,14 @@ function IntelligenceSection() {
           type="button"
           className="btn"
           disabled={wipe.isPending}
-          onClick={() => wipe.mutate()}
+          onClick={async () => {
+            const ok = await confirm({
+              title: "Clear the conversation?",
+              body: "Every question and answer in the Ask panel is deleted. This cannot be undone.",
+              confirmLabel: "Clear conversation",
+            });
+            if (ok) wipe.mutate();
+          }}
         >
           {wipe.isPending ? "Clearing…" : "Clear conversation"}
         </button>
@@ -589,7 +632,7 @@ function DeliverySection({
   channels: NotificationChannel[];
   loading: boolean;
   onToggle: (id: string, enabled: boolean) => void;
-  onRemove: (id: string) => void;
+  onRemove: (channel: NotificationChannel) => Promise<void>;
 }) {
   const watchlist = useQuery({ queryKey: ["watchlist", "server"], queryFn: fetchWatchlist });
 
@@ -655,7 +698,7 @@ function DeliverySection({
                 <button
                   type="button"
                   className="btn btn-danger"
-                  onClick={() => onRemove(ch.id)}
+                  onClick={() => void onRemove(ch)}
                 >
                   Remove
                 </button>
@@ -671,6 +714,7 @@ function DeliverySection({
 
 export function SettingsPage() {
   const qc = useQueryClient();
+  const confirm = useConfirm();
 
   const alerts = useQuery({ queryKey: ["alerts"], queryFn: fetchAlerts });
   const events = useQuery({ queryKey: ["alert-events"], queryFn: fetchAlertEvents });
@@ -755,7 +799,19 @@ export function SettingsPage() {
                       <button
                         type="button"
                         className="btn btn-danger"
-                        onClick={() => deleteAlertMut.mutate(rule.id)}
+                        onClick={async () => {
+                          const ok = await confirm({
+                            title: "Delete this rule?",
+                            body: (
+                              <>
+                                {rule.symbol} will stop alerting on “{describeRule(rule)}”.
+                                This cannot be undone.
+                              </>
+                            ),
+                            confirmLabel: "Delete rule",
+                          });
+                          if (ok) deleteAlertMut.mutate(rule.id);
+                        }}
                       >
                         Remove
                       </button>
@@ -773,7 +829,19 @@ export function SettingsPage() {
               channels={(channels.data as NotificationChannel[] | undefined) ?? []}
               loading={channels.isLoading}
               onToggle={(id, enabled) => updateChannelMut.mutate({ id, enabled })}
-              onRemove={(id) => deleteChannelMut.mutate(id)}
+              onRemove={async (ch) => {
+                const ok = await confirm({
+                  title: `Remove ${ch.label}?`,
+                  body: (
+                    <>
+                      Any rule on {ch.symbol || "this stock"} that sends here loses a
+                      delivery, and a rule left with none stops reaching you.
+                    </>
+                  ),
+                  confirmLabel: "Remove delivery",
+                });
+                if (ok) deleteChannelMut.mutate(ch.id);
+              }}
             />
 
             <h3 className="settings-sub">Recent firings</h3>

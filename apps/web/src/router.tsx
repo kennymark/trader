@@ -14,6 +14,7 @@ import { ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
 import { convex } from "./lib/convex";
 import { useEffect, useRef } from "react";
 import { AppShell } from "./components/AppShell";
+import { ConfirmProvider } from "./components/ConfirmProvider";
 import { ErrorBoundary, ErrorFallback } from "./components/ErrorBoundary";
 import { authClient } from "./lib/auth";
 import { AUTH_ENABLED } from "./lib/features";
@@ -59,7 +60,9 @@ function RootLayout() {
             title="App crashed"
             hint="A render error bubbled up. Try again — if it keeps happening, refresh the page."
           >
-            <Outlet />
+            <ConfirmProvider>
+              <Outlet />
+            </ConfirmProvider>
           </ErrorBoundary>
         )}
         </QueryErrorResetBoundary>

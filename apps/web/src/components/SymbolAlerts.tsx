@@ -7,6 +7,7 @@ import { AUTH_ENABLED } from "../lib/features";
 import { channelMatchesSymbol } from "../lib/channelSymbol";
 import { describeRule, describeRuleDetail } from "../lib/alertText";
 import { usePreferences } from "../lib/preferences";
+import { useConfirm } from "./ConfirmProvider";
 import {
   createAlert,
   deleteAlert,
@@ -23,6 +24,7 @@ type Props = {
 
 export function SymbolAlerts({ symbol, embedded = false }: Props) {
   const qc = useQueryClient();
+  const confirm = useConfirm();
   const { data: session, isPending: sessionPending } = authClient.useSession();
   const isAuthed = !AUTH_ENABLED || Boolean(session?.user);
 
@@ -210,7 +212,19 @@ export function SymbolAlerts({ symbol, embedded = false }: Props) {
                 <button
                   type="button"
                   className="btn btn-danger"
-                  onClick={() => deleteMut.mutate(rule.id)}
+                  onClick={async () => {
+                    const ok = await confirm({
+                      title: "Delete this rule?",
+                      body: (
+                        <>
+                          {symbol} will stop alerting on “{describeRule(rule)}”. This cannot
+                          be undone.
+                        </>
+                      ),
+                      confirmLabel: "Delete rule",
+                    });
+                    if (ok) deleteMut.mutate(rule.id);
+                  }}
                 >
                   Delete
                 </button>
