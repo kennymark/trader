@@ -4242,7 +4242,7 @@ textarea:focus-visible {
   width: min(30rem, calc(100vw - 3rem));
   /* A notice is three lines; a transcript wants room. Sizing to content and
      capping it keeps the short state from opening onto a void. */
-  max-height: min(34rem, calc(100vh - 8rem));
+  max-height: min(48rem, calc(100vh - 7.5rem));
   display: flex;
   flex-direction: column;
   background: var(--bg-elevated);
@@ -4286,7 +4286,9 @@ textarea:focus-visible {
 
 .chat {
   flex: 1;
-  min-height: 20rem;
+  /* A transcript is the point of the panel, so it opens tall enough to hold a
+     few exchanges without scrolling. The cap above still keeps it on screen. */
+  min-height: 32rem;
   display: flex;
   flex-direction: column;
 }
@@ -4408,7 +4410,7 @@ textarea:focus-visible {
     left: 0.75rem;
     bottom: 4.5rem;
     width: auto;
-    max-height: min(30rem, calc(100vh - 7rem));
+    max-height: calc(100vh - 6.5rem);
   }
 
   .chat-dock-button {
