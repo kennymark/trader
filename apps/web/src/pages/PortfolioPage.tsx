@@ -405,7 +405,10 @@ function PaperBody({
           <div className="pnl-hero-stats">
             <MiniStat label="Deployed" value={moneyHero(performance.invested)} />
             <MiniStat label="Dividends" value={moneyHero(performance.dividends)} />
-            <MiniStat label="Open" value={`${performance.openCount} names`} />
+            <MiniStat
+            label="Open"
+            value={`${performance.openCount} ${performance.openCount === 1 ? "name" : "names"}`}
+          />
             <MiniStat label="FX / stamp" value={moneyHero(performance.fees)} />
           </div>
         </div>

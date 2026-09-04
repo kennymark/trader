@@ -85,9 +85,6 @@ export function AppShell({ user, children }: Props) {
       <div className="app-main">
         <header className="app-topbar">
           <div className="app-search muted">Search stocks on Watchlist · The Hunt scores your list</div>
-          <Link to="/settings" className="btn btn-ghost">
-            Settings
-          </Link>
         </header>
         <main className="app-content">{children}</main>
       </div>

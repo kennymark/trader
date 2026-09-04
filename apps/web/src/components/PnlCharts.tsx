@@ -28,7 +28,6 @@ export function CumulativePnlChart({ series }: { series: PnlMonthPoint[] }) {
   const x = (i: number) => pad.l + (i / (series.length - 1)) * innerW;
   const y = (v: number) => pad.t + innerH - ((v - min) / span) * innerH;
   const line = series.map((s, i) => `${i === 0 ? "M" : "L"}${x(i)},${y(s.cumulative)}`).join(" ");
-  const area = `${line} L${x(series.length - 1)},${y(0)} L${x(0)},${y(0)} Z`;
   const ticks = [min, 0, max].filter((v, i, a) => a.indexOf(v) === i);
   const last = series[series.length - 1]!;
   const first = series[0]!;
@@ -59,7 +58,6 @@ export function CumulativePnlChart({ series }: { series: PnlMonthPoint[] }) {
             </text>
           </g>
         ))}
-        <path d={area} className={up ? "pnl-area-up" : "pnl-area-down"} />
         <path d={line} className={up ? "pnl-line-up" : "pnl-line-down"} />
         <text x={x(0)} y={h - 8} className="pnl-chart-axis">
           {monthLabel(first.month, true)}
@@ -76,7 +74,12 @@ export function CumulativePnlChart({ series }: { series: PnlMonthPoint[] }) {
 }
 
 export function MonthlyPnlChart({ series }: { series: PnlMonthPoint[] }) {
-  const recent = series.slice(-36);
+  // Window to the months that actually hold activity: an empty frame is not a chart.
+  const active = series.map((s, i) => ({ s, i })).filter(({ s }) => Math.abs(s.pnl) > 0.005);
+  if (active.length === 0) return null;
+  const from = Math.max(0, active[0]!.i - 1);
+  const to = Math.min(series.length, active[active.length - 1]!.i + 2);
+  const recent = series.slice(from, to).slice(-36);
   if (recent.length === 0) return null;
   const w = 640;
   const h = 220;
@@ -212,7 +215,6 @@ export function NamePnlChart({
                 y={cy - 6}
                 width={Math.max(1, width)}
                 height={12}
-                rx={2}
                 className={isPos ? "pnl-bar-up" : "pnl-bar-down"}
               />
               <text
@@ -244,58 +246,32 @@ export function WinLossChart({
   lossCount: number;
   winRatePct: number | null;
 }) {
-  const gross = Math.max(1, profit + Math.abs(loss));
-  const pW = (profit / gross) * 100;
-  const lW = (Math.abs(loss) / gross) * 100;
-  const rate = winRatePct ?? 0;
-  const size = 92;
-  const stroke = 9;
-  const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
-  const offset = c - (Math.max(0, Math.min(100, rate)) / 100) * c;
+  const money = (n: number) => `£${Math.round(n).toLocaleString("en-GB")}`;
+  const names = (n: number) => `${n} ${n === 1 ? "name" : "names"}`;
 
+  // A statement states its figures on ruled lines. It does not draw a dial.
   return (
     <div className="pnl-winloss">
-      <div className="pnl-winloss-ring">
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-          <circle className="score-ring-track" cx={size / 2} cy={size / 2} r={r} strokeWidth={stroke} fill="none" />
-          <circle
-            className="score-ring-value"
-            cx={size / 2}
-            cy={size / 2}
-            r={r}
-            strokeWidth={stroke}
-            fill="none"
-            strokeDasharray={c}
-            strokeDashoffset={offset}
-            strokeLinecap="round"
-            transform={`rotate(-90 ${size / 2} ${size / 2})`}
-          />
-        </svg>
-        <div className="pnl-winloss-rate">
-          <span className="tabular">{winRatePct != null ? `${Math.round(winRatePct)}%` : "—"}</span>
-          <small>win rate</small>
-        </div>
+      <div className="account-line">
+        <span className="account-line-label">Win rate</span>
+        <span className="account-line-leader" aria-hidden="true" />
+        <span className="tabular pnl-winrate-figure">
+          {winRatePct != null ? `${Math.round(winRatePct)}%` : "—"}
+        </span>
       </div>
-      <div className="pnl-winloss-bars">
-        <div className="pnl-winloss-row">
-          <span>Gross profits</span>
-          <span className="tabular pnl-up">£{Math.round(profit).toLocaleString("en-GB")}</span>
-        </div>
-        <div className="pnl-stack">
-          <i className="up" style={{ width: `${pW}%` }} />
-        </div>
-        <div className="pnl-winloss-row">
-          <span>Gross losses</span>
-          <span className="tabular pnl-down">£{Math.round(Math.abs(loss)).toLocaleString("en-GB")}</span>
-        </div>
-        <div className="pnl-stack">
-          <i className="down" style={{ width: `${lW}%` }} />
-        </div>
-        <div className="muted" style={{ marginTop: "0.45rem" }}>
-          {winCount} names up · {lossCount} names down
-        </div>
+      <div className="account-line">
+        <span className="account-line-label">Gross profits</span>
+        <span className="account-line-leader" aria-hidden="true" />
+        <span className="tabular pnl-up">{money(profit)}</span>
       </div>
+      <div className="account-line">
+        <span className="account-line-label">Gross losses</span>
+        <span className="account-line-leader" aria-hidden="true" />
+        <span className="tabular pnl-down">{money(Math.abs(loss))}</span>
+      </div>
+      <p className="muted pnl-winloss-note">
+        {names(winCount)} up · {names(lossCount)} down
+      </p>
     </div>
   );
 }

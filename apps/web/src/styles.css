@@ -3833,3 +3833,115 @@ select {
   font-weight: 800;
   letter-spacing: -0.02em;
 }
+
+
+/* --- finish-review fixes ------------------------------------------------- */
+
+/* 4. FIRST VIEWPORT names the masthead rule first, and it was absent. */
+.pnl-head {
+  border-top: 6px solid var(--ink);
+  padding-top: 0.85rem;
+}
+
+/* 8. The direction's own risk line: this fails when the type is set timidly. */
+.pnl-page h1,
+.pnl-head h1 {
+  font-size: clamp(2.1rem, 4vw, 3.1rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.02;
+}
+
+/* 5. A primary action that wraps to two lines is not a bar. */
+.pnl-head-actions .btn {
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .pnl-head-actions {
+    display: flex;
+    width: 100%;
+    gap: 0.5rem;
+  }
+
+  .pnl-head-actions .btn {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+/* 1. Win rate reads as a figure on a ruled line, like every other amount. */
+.pnl-winloss {
+  display: block;
+}
+
+.pnl-winloss .account-line {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.pnl-winloss .account-line:last-of-type {
+  border-bottom: 0;
+}
+
+.pnl-winrate-figure {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.pnl-winloss-note {
+  margin: 0.5rem 0 0;
+}
+
+/* The bar row's keyline was an enclosure; hover stays as a wash. */
+.pnl-bar-hit {
+  fill: transparent;
+}
+
+.pnl-bar-group:hover .pnl-bar-hit,
+.pnl-bar-group.selected .pnl-bar-hit {
+  fill: rgb(var(--accent-rgb) / 0.06);
+}
+
+/* The chart frame drew a box around every row. */
+.pnl-chart-grid-line,
+.pnl-chart-grid {
+  stroke: var(--border);
+}
+
+.pnl-chart-zero {
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
+.pnl-line-up,
+.pnl-line-down {
+  stroke-width: 2;
+  fill: none;
+}
+
+.pnl-line-up {
+  stroke: var(--up);
+}
+
+.pnl-line-down {
+  stroke: var(--down);
+}
+
+/* The one colour left at rest: the statement's own reference marks. */
+.pnl-meta,
+.page-lead {
+  color: var(--text-muted);
+}
+
+/* The row hit-area is a target, never a drawn box. */
+.pnl-bar-hit {
+  fill: transparent;
+  stroke: none;
+}
+
+.pnl-bar-group:hover .pnl-bar-hit,
+.pnl-bar-group.selected .pnl-bar-hit {
+  fill: rgb(var(--accent-rgb) / 0.06);
+  stroke: none;
+}
