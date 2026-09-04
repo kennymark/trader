@@ -32,7 +32,7 @@
   --down: #d4351c;
   --down-rgb: 212 53 28;
   --danger: #d4351c;
-  --warn: #b58840;
+  /* The one series colour: the path not taken, in the replay chart only. */
   --brass: #b58840;
   --brass-rgb: 181 136 64;
 
@@ -2822,13 +2822,6 @@ button.symbol-suggestion.active {
   margin: 0;
 }
 
-.pnl-kicker {
-  margin: 0 0 0.2rem;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
 .pnl-meta {
   margin: 0 0 1.1rem;
 }
@@ -3397,7 +3390,7 @@ button.symbol-suggestion.active {
 }
 
 .whatif-card-highlight {
-  border-color: rgba(255, 212, 121, 0.45);
+  border-top-color: var(--brass);
 }
 
 .whatif-card-label {
@@ -3602,7 +3595,6 @@ textarea:focus-visible,
   border: 0;
   border-left: 1px solid var(--ink);
   border-radius: 0;
-  box-shadow: -24px 0 48px rgba(11, 12, 12, 0.18);
 }
 
 .login-card {
@@ -3972,4 +3964,10 @@ select {
     margin-left: auto;
     text-align: right;
   }
+}
+
+/* The counterfactual card carries the same brass as its own line in the chart.
+   Declared after the no-enclosure block, which would otherwise force ink. */
+.whatif-card-highlight {
+  border-top-color: var(--brass);
 }
