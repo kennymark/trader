@@ -20,9 +20,11 @@ import {
 type Props = {
   selectedSymbol: string | null;
   onSelect: (symbol: string) => void;
+  /** Lets the page open the first symbol so the chart pane is never a blank void. */
+  onSymbolsLoaded?: (symbols: string[]) => void;
 };
 
-export function WatchlistPane({ selectedSymbol, onSelect }: Props) {
+export function WatchlistPane({ selectedSymbol, onSelect, onSymbolsLoaded }: Props) {
   const [symbol, setSymbol] = useState("");
   const [guestError, setGuestError] = useState<string | null>(null);
   const [guestTick, setGuestTick] = useState(0);
@@ -46,6 +48,14 @@ export function WatchlistPane({ selectedSymbol, onSelect }: Props) {
   });
 
   const symbols = (watchlist.data || []).map((w) => w.symbol);
+
+  const notifiedRef = useRef<string>("");
+  useEffect(() => {
+    const key = symbols.join(",");
+    if (!key || notifiedRef.current === key) return;
+    notifiedRef.current = key;
+    onSymbolsLoaded?.(symbols);
+  }, [symbols, onSymbolsLoaded]);
 
   const quotes = useQuery({
     queryKey: ["quotes", symbols.join(",")],

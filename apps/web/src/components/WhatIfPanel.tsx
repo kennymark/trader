@@ -6,10 +6,14 @@ import { formatDate } from "../lib/dates";
 
 type PathId = "actual" | "neverSold" | "reinvested";
 
+/**
+ * Three comparable paths, so they need three distinguishable hues. Green and red
+ * stay out of it: those mean profit and loss elsewhere, and a path is neither.
+ */
 const PATH_COLORS: Record<PathId, string> = {
   actual: "var(--accent)",
-  neverSold: "#ffd479",
-  reinvested: "#8ab4ff",
+  neverSold: "#f0b429",
+  reinvested: "#a78bfa",
 };
 
 function money(n: number | null | undefined, currency = "GBP") {
