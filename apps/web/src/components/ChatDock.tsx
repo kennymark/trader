@@ -1,5 +1,13 @@
-import { useEffect, useRef, useState } from "react";
-import { PortfolioChat } from "./PortfolioChat";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
+
+/**
+ * The panel carries a markdown parser, which is a large dependency for
+ * something most visits never open. Loading it on first open keeps it off the
+ * initial bundle.
+ */
+const PortfolioChat = lazy(() =>
+  import("./PortfolioChat").then((m) => ({ default: m.PortfolioChat })),
+);
 
 /**
  * The analyst is available from anywhere in the terminal, so it docks rather
@@ -38,7 +46,9 @@ export function ChatDock() {
               <span aria-hidden="true">×</span>
             </button>
           </div>
-          <PortfolioChat />
+          <Suspense fallback={<p className="chat-notice">Loading…</p>}>
+            <PortfolioChat />
+          </Suspense>
         </div>
       )}
 

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { authClient } from "../lib/auth";
 import { AUTH_ENABLED } from "../lib/features";
 import { askChat, clearChat, fetchChatHistory, fetchChatStatus } from "../lib/queries";
+import { Markdown } from "./Markdown";
 
 // A mix of both kinds, so it is visible that the assistant reads live market
 // data as well as the book.
@@ -131,7 +132,9 @@ export function PortfolioChat() {
         {messages.map((m) => (
           <div key={m.id} className={`chat-turn chat-turn-${m.role}`}>
             <div className="chat-turn-who">{m.role === "user" ? "You" : m.provider || "Analyst"}</div>
-            <div className="chat-turn-body">{m.content}</div>
+            <div className="chat-turn-body">
+              {m.role === "user" ? m.content : <Markdown>{m.content}</Markdown>}
+            </div>
           </div>
         ))}
 
