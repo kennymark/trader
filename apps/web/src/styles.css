@@ -1,40 +1,40 @@
 :root {
   /*
-   * The Statement of Account.
+   * The Statement of Account, printed dark.
    *
-   * Statutory paper: black ink on white, read at a desk under lamplight. Colour is
-   * lawful, not decorative — green and red appear on money and nowhere else, and
-   * the yellow is the focus state, borrowed from the one design system that treats
-   * keyboard focus as a civic obligation.
-   *
-   * Nothing is enclosed. Structure is carried by rules and weight.
+   * The user pinned a dark ground, so the sheet inverts: ink becomes the paper
+   * and paper becomes the ink. Every structural rule survives the inversion —
+   * nothing is enclosed, hierarchy is carried by graded rules and weight, and
+   * colour stays lawful: green and red on money, yellow on focus, brass on the
+   * one plotted series that cannot use either.
    */
-  --bg: #ffffff;
-  --bg-pane: #ffffff;
-  --bg-elevated: #f3f2f1;
-  --surface: 255 255 255;
-  --ink: #0b0c0c;
-  --border: #b1b4b6;
-  --border-strong: #0b0c0c;
-  --text: #0b0c0c;
-  --text-muted: #505a5f;
+  --bg: #0e1013;
+  --bg-pane: #0e1013;
+  --bg-elevated: #191c21;
+  --surface: 14 16 19;
+  --ink: #f2f3f5;
+  --border: #3a3f47;
+  --border-strong: #f2f3f5;
+  --text: #f2f3f5;
+  --text-muted: #9aa1ab;
 
-  /* Interaction: black bars and a yellow focus state. */
-  --accent: #0b0c0c;
-  --accent-rgb: 11 12 12;
-  --accent-dim: #505a5f;
-  --accent-contrast: #ffffff;
+  /* Interaction: pale bars on a dark sheet, and the same statutory focus. */
+  --accent: #f2f3f5;
+  --accent-rgb: 242 243 245;
+  --accent-dim: #6b7280;
+  --accent-contrast: #0e1013;
   --focus: #ffdd00;
 
-  /* Money, and nothing else. */
-  --up: #00703c;
-  --up-rgb: 0 112 60;
-  --down: #d4351c;
-  --down-rgb: 212 53 28;
-  --danger: #d4351c;
+  /* Money, lifted for a dark ground. */
+  --up: #4ac48a;
+  --up-rgb: 74 196 138;
+  --down: #ff6259;
+  --down-rgb: 255 98 89;
+  --danger: #ff6259;
+
   /* The one series colour: the path not taken, in the replay chart only. */
-  --brass: #b58840;
-  --brass-rgb: 181 136 64;
+  --brass: #d3a844;
+  --brass-rgb: 211 168 68;
 
   --font: "Public Sans", system-ui, sans-serif;
   --mono: "Public Sans", system-ui, sans-serif;
@@ -3632,9 +3632,9 @@ textarea:focus-visible,
 }
 
 .btn-primary:hover {
-  background: #22282a;
+  background: #ffffff;
   color: var(--accent-contrast);
-  border-color: #22282a;
+  border-color: #ffffff;
 }
 
 .field input,
@@ -3711,14 +3711,14 @@ textarea {
 
 .pnl-status-open,
 .pnl-trade-buy {
-  background: #cce2d8;
-  color: #005a30;
+  background: #16341f;
+  color: #7ee0a6;
 }
 
 .pnl-status-closed,
 .pnl-trade-sell {
-  background: #f6d7d2;
-  color: #942514;
+  background: #3a1a18;
+  color: #ff9d96;
 }
 
 .pnl-hero-value {
@@ -3970,4 +3970,51 @@ select {
    Declared after the no-enclosure block, which would otherwise force ink. */
 .whatif-card-highlight {
   border-top-color: var(--brass);
+}
+
+/* --- the chart readout ---------------------------------------------------- */
+
+.chart-el {
+  position: relative;
+}
+
+/* A statement answers the question you point at: the figure and its date,
+   set on the sheet itself rather than in a floating card. */
+.chart-readout {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  padding: 0.3rem 0.55rem;
+  background: var(--bg);
+  border-left: 2px solid var(--ink);
+  white-space: nowrap;
+}
+
+.chart-readout-price {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.1;
+}
+
+.chart-readout-date {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* The analytics tiles were still boxed; on a statement they are ruled columns. */
+.stat {
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  padding: 0.55rem 0 0.7rem;
+  box-shadow: none;
+}
+
+.stats-grid {
+  gap: 0.5rem 1.5rem;
 }

@@ -20,16 +20,17 @@ Unresolved: whether the ruled table survives at phone width or becomes stacked r
 THESIS: A statement of account, not a trading terminal. It refuses the dark, dense,
 multi-pane grid this category always ships.
 
-OWN-WORLD: Statutory paper. Black ink (#0b0c0c) on white, focus yellow (#ffdd00) for
-interaction, statutory green (#00703c) and red (#d4351c) on money only. Public Sans.
-Black keylines and ruled rows; no cards, no boxes, no shadows, no enclosure anywhere.
+OWN-WORLD: Statutory paper, printed dark at the user's instruction. Pale ink (#f2f3f5)
+on a #0e1013 ground, focus yellow (#ffdd00), statutory green (#4ac48a) and red (#ff6259)
+on money only, brass (#d3a844) on the never-sold series only. Public Sans. Graded rules
+and ruled rows; no cards, no boxes, no shadows, no enclosure anywhere.
 
 STORY: You open your own statement, read what you actually did, and are shown what a
 sell cost you without being sold anything.
 
 FIRST VIEWPORT: A masthead rule over "Statement of account" and the account line. The
 net result alone as the largest figure on the page, held between two rules. Positions
-below as a plain ruled table. The primary action is a solid black bar, top right.
+below as a plain ruled table. The primary action is a solid pale bar, top right.
 
 FORM: The Statement of Account; candidate 5 of 7 by resonance; seed key 140791f1.
 
