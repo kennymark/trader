@@ -153,6 +153,18 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_connection", ["connectionId"]),
 
+  userPreferences: defineTable({
+    userId: v.string(),
+    defaultChartRange: v.string(),
+    defaultWorkTab: v.string(),
+    quoteRefreshSeconds: v.number(),
+    huntAiRationales: v.boolean(),
+    alertDefaultBaseline: v.string(),
+    alertDefaultWindowDays: v.number(),
+    alertDefaultCooldownMinutes: v.number(),
+    updatedAt: v.number(),
+  }).index("by_user", ["userId"]),
+
   chatMessages: defineTable({
     userId: v.string(),
     role: v.string(), // user | assistant

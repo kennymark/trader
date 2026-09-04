@@ -459,13 +459,20 @@ function buildFeed(
 export async function buildIntelligence(
   symbols: string[],
   source: "watchlist" | "symbols",
-  opts?: { userId?: string; persist?: boolean; store?: IntelligenceStore },
+  opts?: {
+    userId?: string;
+    persist?: boolean;
+    store?: IntelligenceStore;
+    /** User preference; false skips the rationale model call entirely. */
+    aiRationales?: boolean;
+  },
 ): Promise<IntelligenceResponse> {
   const unique = [...new Set(symbols.map((s) => s.trim().toUpperCase()).filter(Boolean))].slice(
     0,
     MAX_SYMBOLS,
   );
-  const cacheKey = `${source}:${unique.slice().sort().join(",")}`;
+  const aiRationales = opts?.aiRationales !== false;
+  const cacheKey = `${source}:${aiRationales ? "ai" : "raw"}:${unique.slice().sort().join(",")}`;
   const cached = BATCH_CACHE.get(cacheKey);
   if (cached && Date.now() - cached.at < BATCH_TTL_MS) {
     return cached.data;
@@ -497,7 +504,7 @@ export async function buildIntelligence(
   }
 
   cards.sort((a, b) => b.opportunityScore - a.opportunityScore);
-  const enriched = await enrichHuntRationales(cards);
+  const enriched = await enrichHuntRationales(cards, aiRationales);
 
   let priorScores: Map<string, number> | undefined;
   if (opts?.userId && opts.store) {

@@ -136,8 +136,9 @@ export async function buildAiStockAnalysis(
 
 export async function enrichHuntRationales(
   cards: OpportunityCard[],
+  enabled = true,
 ): Promise<OpportunityCard[]> {
-  if (!isDeepSeekEnabled() || cards.length === 0) {
+  if (!enabled || !isDeepSeekEnabled() || cards.length === 0) {
     return cards.map((c) => ({
       ...c,
       rationale: c.rationale || `${c.action.toUpperCase()} ${c.symbol}: ${c.keyReason}`,

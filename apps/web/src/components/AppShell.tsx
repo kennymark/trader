@@ -18,7 +18,7 @@ const NAV = [
   },
   {
     to: "/portfolio",
-    label: "Paper",
+    label: "Portfolio",
     match: (p: string) => p.startsWith("/portfolio"),
   },
   {

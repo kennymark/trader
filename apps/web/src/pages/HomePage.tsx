@@ -5,13 +5,14 @@ import { WatchlistPane } from "../components/WatchlistPane";
 import { SymbolIntelligence } from "../components/SymbolIntelligence";
 import { FeedList, PredictionsPanel } from "./IntelligencePage";
 import { fetchIntelligence, fetchPredictions } from "../lib/queries";
+import { usePreferences } from "../lib/preferences";
 import {
   readSelectedSymbol,
   subscribeSelectedSymbol,
   writeSelectedSymbol,
 } from "../lib/selectedSymbol";
 
-type Tab = "chart" | "intelligence" | "feed" | "record";
+import type { WorkTab as Tab } from "@trader/shared";
 
 const TABS: Array<[Tab, string]> = [
   ["chart", "Chart"],
@@ -26,8 +27,15 @@ const TABS: Array<[Tab, string]> = [
  * dated events are a diary of the whole list, not a view of the selected name.
  */
 export function HomePage() {
+  const { prefs, loaded } = usePreferences();
   const [selected, setSelected] = useState<string | null>(() => readSelectedSymbol());
-  const [tab, setTab] = useState<Tab>("chart");
+  const [tab, setTab] = useState<Tab>(prefs.defaultWorkTab);
+  const [touched, setTouched] = useState(false);
+
+  // Same as the chart range: honour the stored tab until the reader picks one.
+  useEffect(() => {
+    if (loaded && !touched) setTab(prefs.defaultWorkTab);
+  }, [loaded, prefs.defaultWorkTab, touched]);
 
   // The navbar search selects a symbol from outside this page.
   useEffect(() => subscribeSelectedSymbol((next) => setSelected(next)), []);
@@ -84,7 +92,10 @@ export function HomePage() {
               role="tab"
               aria-selected={tab === id}
               className={tab === id ? "active" : ""}
-              onClick={() => setTab(id)}
+              onClick={() => {
+                setTouched(true);
+                setTab(id);
+              }}
             >
               {label}
             </button>

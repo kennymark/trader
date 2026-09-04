@@ -675,3 +675,74 @@ export type IntelligenceResponse = {
   /** @deprecated use opportunities */
   recommendations: IntelligenceRecommendation[];
 };
+
+// --- user preferences ---
+
+export const workTabSchema = z.enum(["chart", "intelligence", "feed", "record"]);
+export type WorkTab = z.infer<typeof workTabSchema>;
+
+/**
+ * Every preference here has exactly one consumer in the app; nothing is stored
+ * that does not change what a screen does.
+ */
+export type UserPreferences = {
+  /** Range ChartPane opens on. */
+  defaultChartRange: HistoryRange;
+  /** Tab the work pane opens on. */
+  defaultWorkTab: WorkTab;
+  /** Watchlist quote polling, in seconds. 0 turns polling off. */
+  quoteRefreshSeconds: number;
+  /** Whether the hunt spends a model call writing rationales. */
+  huntAiRationales: boolean;
+  /** Starting values in the per-symbol alert form. */
+  alertDefaultBaseline: AlertBaseline;
+  alertDefaultWindowDays: number;
+  alertDefaultCooldownMinutes: number;
+};
+
+export const DEFAULT_PREFERENCES: UserPreferences = {
+  defaultChartRange: "1y",
+  defaultWorkTab: "chart",
+  quoteRefreshSeconds: 45,
+  huntAiRationales: true,
+  alertDefaultBaseline: "prev_close",
+  alertDefaultWindowDays: 20,
+  alertDefaultCooldownMinutes: 60,
+};
+
+export const QUOTE_REFRESH_CHOICES = [0, 15, 45, 120, 300] as const;
+
+function clampInt(value: unknown, min: number, max: number, fallback: number): number {
+  const n = typeof value === "number" ? Math.round(value) : Number.NaN;
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+}
+
+/**
+ * Widened so a stored row (whose enum columns are plain strings) can be passed
+ * straight in; validating them is this function's whole job.
+ */
+export type RawPreferences = Partial<Record<keyof UserPreferences, unknown>>;
+
+/** Clamps stored values back into range, so a bad row cannot break a screen. */
+export function normalizePreferences(raw: RawPreferences | null | undefined): UserPreferences {
+  const p = { ...DEFAULT_PREFERENCES, ...(raw ?? {}) } as Record<keyof UserPreferences, unknown>;
+  return {
+    defaultChartRange: historyRangeSchema.catch(DEFAULT_PREFERENCES.defaultChartRange).parse(p.defaultChartRange),
+    defaultWorkTab: workTabSchema.catch(DEFAULT_PREFERENCES.defaultWorkTab).parse(p.defaultWorkTab),
+    quoteRefreshSeconds: QUOTE_REFRESH_CHOICES.includes(p.quoteRefreshSeconds as never)
+      ? (p.quoteRefreshSeconds as number)
+      : DEFAULT_PREFERENCES.quoteRefreshSeconds,
+    huntAiRationales: Boolean(p.huntAiRationales),
+    alertDefaultBaseline: alertBaselineSchema
+      .catch(DEFAULT_PREFERENCES.alertDefaultBaseline)
+      .parse(p.alertDefaultBaseline),
+    alertDefaultWindowDays: clampInt(p.alertDefaultWindowDays, 1, 365, DEFAULT_PREFERENCES.alertDefaultWindowDays),
+    alertDefaultCooldownMinutes: clampInt(
+      p.alertDefaultCooldownMinutes,
+      0,
+      1440,
+      DEFAULT_PREFERENCES.alertDefaultCooldownMinutes,
+    ),
+  };
+}

@@ -5,6 +5,7 @@ import type { AlertBaseline, AlertKind } from "@trader/shared";
 import { authClient } from "../lib/auth";
 import { AUTH_ENABLED } from "../lib/features";
 import { channelMatchesSymbol } from "../lib/channelSymbol";
+import { usePreferences } from "../lib/preferences";
 import {
   createAlert,
   deleteAlert,
@@ -27,9 +28,10 @@ export function SymbolAlerts({ symbol, embedded = false }: Props) {
 
   const [kind, setKind] = useState<AlertKind>("pct_drop");
   const [threshold, setThreshold] = useState(10);
-  const [baseline, setBaseline] = useState<AlertBaseline>("prev_close");
-  const [baselineWindowDays, setBaselineWindowDays] = useState(20);
-  const [cooldownMinutes, setCooldownMinutes] = useState(60);
+  const { prefs } = usePreferences();
+  const [baseline, setBaseline] = useState<AlertBaseline>(prefs.alertDefaultBaseline);
+  const [baselineWindowDays, setBaselineWindowDays] = useState(prefs.alertDefaultWindowDays);
+  const [cooldownMinutes, setCooldownMinutes] = useState(prefs.alertDefaultCooldownMinutes);
   const [channelIds, setChannelIds] = useState<string[]>([]);
 
   const alerts = useQuery({

@@ -1,4 +1,4 @@
-# Trader — Watchlist, Paper P&L, and Price Alerts
+# Trader — Watchlist, Portfolio P&L, and Price Alerts
 
 Track a watchlist, import your broker history, and find out what your selling actually cost you.
 
@@ -15,14 +15,14 @@ paper, black ink on white, and colour reserved for profit and loss. See
 ## Highlights
 
 - **Watchlist + charts.** Live quotes, historical candles, and non-AI analytics per symbol.
-- **Paper.** Import a Freetrade activity CSV to get realized and open P&L, per-position trade sheets, and a comparison against the S&P 500 and FTSE 100.
+- **Portfolio.** Import a Freetrade activity CSV to get realized and open P&L, per-position trade sheets, and a comparison against the S&P 500 and FTSE 100.
 - **If you had never sold.** Pick any position you sold and replay it against the market.
 - **The Hunt.** Opportunity scoring, catalysts, and scenario simulation, with optional AI rationales.
 - **Alerts.** Price and percentage-move rules delivered to email, Telegram, or Twist.
 
 ## If you had never sold
 
-Open any sold position on the Paper page and the drawer replays it three ways, valued day by day from the same buys:
+Open any sold position on the Portfolio page and the drawer replays it three ways, valued day by day from the same buys:
 
 | Path | What it assumes |
 |------|-----------------|
@@ -36,9 +36,9 @@ Broker exports record shares as traded, while Yahoo closes are split-adjusted, s
 
 The counterfactual deliberately assumes nothing else changed. That flatters holding, since in reality the money went somewhere, which is why the index path sits alongside it.
 
-## Paper P&L
+## Portfolio P&L
 
-![Paper P&L](docs/screenshots/portfolio.png)
+![Portfolio P&L](docs/screenshots/portfolio.png)
 
 Positions are grouped by ISIN, so a ticker change carries its history across. Realized P&L uses average cost. Open positions are marked with live quotes and converted to account currency at each day's rate.
 
@@ -113,7 +113,7 @@ Covers the never-sold replay, the Freetrade parser and opportunity scoring.
 |-------|----------------|
 | `/` | Watchlist, historical chart, per-symbol analytics, alerts and channels |
 | `/intelligence` | The Hunt: opportunity scores, catalysts, predictions, scenarios |
-| `/portfolio` | Paper: imported broker P&L, per-position drawers, vs-market comparison |
+| `/portfolio` | Portfolio: imported broker P&L, per-position drawers, vs-market comparison |
 | `/settings` | Broker import, channels, Telegram link |
 
 Every call the UI makes goes through `apps/web/src/lib/queries.ts`, which is the
@@ -121,7 +121,7 @@ only file that knows about Convex.
 
 ## Importing from Freetrade
 
-Freetrade has no public API, so the import takes the activity CSV export. Drop the file on either the Settings page or the Paper page, and transactions, holdings, and optionally your watchlist are populated. Each import replaces the previous one rather than merging into it, so always upload a full export rather than a slice.
+Freetrade has no public API, so the import takes the activity CSV export. Drop the file on either the Settings page or the Portfolio page, and transactions, holdings, and optionally your watchlist are populated. Each import replaces the previous one rather than merging into it, so always upload a full export rather than a slice.
 
 ## Analytics (non-AI)
 

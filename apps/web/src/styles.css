@@ -3088,7 +3088,7 @@ button.symbol-suggestion.active {
 }
 
 
-/* —— Paper: clickable bars, detail panel, pagination —— */
+/* —— Portfolio: clickable bars, detail panel, pagination —— */
 .pnl-bar-group {
   cursor: pointer;
 }
@@ -4458,4 +4458,236 @@ textarea:focus-visible {
   font-weight: 600;
   color: var(--ink);
   border-bottom: 1px solid var(--border);
+}
+
+/* --- Settings: a configuration surface, not a report ---------------------- */
+
+.page-settings {
+  max-width: 1080px;
+}
+
+.settings-head {
+  margin-bottom: 2rem;
+}
+
+.settings-layout {
+  display: grid;
+  grid-template-columns: 12rem 1fr;
+  gap: 3rem;
+  align-items: start;
+}
+
+/* The index reports where you are as well as offering a jump, which is what
+   earns it the space on a page this long. */
+.settings-nav {
+  position: sticky;
+  top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border);
+}
+
+.settings-nav a {
+  padding: 0.45rem 0 0.45rem 0.85rem;
+  margin-left: -1px;
+  border-left: 2px solid transparent;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.settings-nav a:hover {
+  color: var(--ink);
+}
+
+.settings-nav a.active {
+  color: var(--ink);
+  border-left-color: var(--ink);
+  font-weight: 600;
+}
+
+.settings-body {
+  min-width: 0;
+}
+
+.settings-section {
+  padding-bottom: 2.75rem;
+  margin-bottom: 2.75rem;
+  border-bottom: 1px solid var(--border);
+  scroll-margin-top: 1.5rem;
+}
+
+.settings-section:last-child {
+  border-bottom: 0;
+  margin-bottom: 0;
+}
+
+.settings-section-head {
+  margin-bottom: 1.4rem;
+}
+
+.settings-section-head h2 {
+  margin: 0 0 0.3rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.settings-section-head p {
+  margin: 0;
+  max-width: 60ch;
+  line-height: 1.5;
+}
+
+.settings-sub {
+  margin: 2rem 0 0.85rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Label left, control right, separated by a rule — the shape of a settings
+   sheet, so the eye can run down either column on its own. */
+.setting {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1.5rem;
+  align-items: start;
+  padding: 0.95rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.setting:last-of-type {
+  border-bottom: 0;
+}
+
+.setting-label {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.setting-hint {
+  margin: 0.2rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+  max-width: 46ch;
+}
+
+.setting-control {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.setting-static {
+  text-align: right;
+  font-size: 0.92rem;
+}
+
+.setting-number {
+  width: 6rem;
+  text-align: right;
+}
+
+.setting-choice {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  border: 1px solid var(--border);
+}
+
+.setting-choice button {
+  background: transparent;
+  border: 0;
+  border-left: 1px solid var(--border);
+  border-radius: 0;
+  padding: 0.4rem 0.7rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.setting-choice button:first-child {
+  border-left: 0;
+}
+
+.setting-choice button:hover:not(:disabled) {
+  color: var(--ink);
+}
+
+/* Selection is a change in value, not hue: the chosen option is inked in. */
+.setting-choice button.active {
+  background: var(--ink);
+  color: var(--accent-contrast);
+  font-weight: 600;
+}
+
+.setting-choice button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.settings-card-title {
+  font-weight: 600;
+}
+
+.settings-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+@media (max-width: 880px) {
+  .settings-layout {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .settings-nav {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    border-left: 0;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.5rem;
+  }
+
+  .settings-nav a {
+    padding: 0.25rem 0;
+    border-left: 0;
+    margin-left: 0;
+  }
+
+  .settings-nav a.active {
+    border-left: 0;
+  }
+
+  .setting {
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+  }
+
+  .setting-control,
+  .setting-choice {
+    justify-content: flex-start;
+  }
+
+  .setting-static {
+    text-align: left;
+  }
+}
+
+/* The native spinner is a second control inside a field that already reads as
+   one; the value is typed, not stepped. */
+.setting-number::-webkit-outer-spin-button,
+.setting-number::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.setting-number {
+  appearance: textfield;
+  -moz-appearance: textfield;
 }

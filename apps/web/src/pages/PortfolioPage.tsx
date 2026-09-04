@@ -266,7 +266,7 @@ export function PortfolioPage() {
           </p>
         </div>
       ) : (
-        <PaperBody
+        <PortfolioBody
           performance={performance}
           connectionLabel={
             connection?.lastSyncedAt
@@ -319,7 +319,7 @@ export function PortfolioPage() {
   );
 }
 
-function PaperBody({
+function PortfolioBody({
   performance,
   connectionLabel,
   filter,

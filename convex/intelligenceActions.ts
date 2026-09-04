@@ -15,7 +15,11 @@ import { defaultAssumptionsFromFundamentals } from "../lib/intelligence/scenario
 import { isDeepSeekEnabled } from "../lib/deepseek";
 import { getFundamentals, getQuotes } from "../lib/yahoo";
 import type { IntelligenceStore } from "../lib/store";
-import type { PortfolioHolding } from "@trader/shared";
+import type {
+  IntelligenceResponse,
+  PortfolioHolding,
+  UserPreferences,
+} from "@trader/shared";
 
 /** Binds the pure intelligence layer to Convex storage. */
 function storeFor(ctx: any): IntelligenceStore {
@@ -57,16 +61,19 @@ async function resolveSymbols(
 
 export const hunt = action({
   args: { symbols: v.optional(v.array(v.string())) },
-  handler: async (ctx, { symbols }) => {
+  handler: async (ctx, { symbols }): Promise<IntelligenceResponse> => {
     const userId = await requireUserId(ctx);
     const requested = (symbols ?? []).map((s) => s.trim().toUpperCase()).filter(Boolean);
     const resolved = await resolveSymbols(ctx, userId, requested);
+    const prefs: UserPreferences = await ctx.runQuery(internal.preferences.forUser, {
+      userId,
+    });
 
     if (resolved.symbols.length === 0) {
       return {
         generatedAt: new Date().toISOString(),
         source: resolved.source,
-        aiEnabled: isDeepSeekEnabled(),
+        aiEnabled: isDeepSeekEnabled() && prefs.huntAiRationales,
         opportunities: [],
         feed: [],
         catalysts: [],
@@ -78,6 +85,7 @@ export const hunt = action({
     return await buildIntelligence(resolved.symbols, resolved.source, {
       userId,
       store: storeFor(ctx),
+      aiRationales: prefs.huntAiRationales,
     });
   },
 });

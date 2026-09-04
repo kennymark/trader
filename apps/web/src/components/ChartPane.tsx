@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { HistoryRange } from "@trader/shared";
 import { fetchAnalytics, fetchHistory } from "../lib/queries";
+import { usePreferences } from "../lib/preferences";
 import { Drawer } from "./Drawer";
 import { PriceChart } from "./PriceChart";
 import { SymbolAlerts } from "./SymbolAlerts";
@@ -21,7 +22,15 @@ function fmtPct(n: number | null | undefined) {
 }
 
 export function ChartPane({ symbol }: Props) {
-  const [range, setRange] = useState<HistoryRange>("1y");
+  const { prefs, loaded } = usePreferences();
+  const [range, setRange] = useState<HistoryRange>(prefs.defaultChartRange);
+  const [touched, setTouched] = useState(false);
+
+  // Preferences arrive after first paint; adopt the stored range unless the
+  // reader has already chosen one on this visit.
+  useEffect(() => {
+    if (loaded && !touched) setRange(prefs.defaultChartRange);
+  }, [loaded, prefs.defaultChartRange, touched]);
   const [drawer, setDrawer] = useState<DrawerKind>(null);
 
   const history = useQuery({
@@ -62,7 +71,10 @@ export function ChartPane({ symbol }: Props) {
                 key={r}
                 type="button"
                 className={range === r ? "active" : ""}
-                onClick={() => setRange(r)}
+                onClick={() => {
+                  setTouched(true);
+                  setRange(r);
+                }}
               >
                 {r.toUpperCase()}
               </button>

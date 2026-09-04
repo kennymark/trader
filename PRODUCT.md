@@ -63,8 +63,8 @@ Constraints future work must preserve:
 - Prices come from Yahoo Finance, with its gaps, delays, and occasional wrong
   values. Do not assume a paid data feed.
 
-Terminology, as the interface uses it: Watchlist, The Hunt, Paper (the imported
-P&L), positions, holdings, realized and open P&L.
+Terminology, as the interface uses it: Watchlist, The Hunt, Portfolio (the
+imported P&L), positions, holdings, realized and open P&L.
 
 Technical: React SPA on Vite; Convex backend with Node actions for market data;
 Better Auth email and password. Realized P&L uses average cost and ignores tax
@@ -91,6 +91,6 @@ identity constraints have been established.
 2. Numbers are the content; the interface should recede.
 3. Say what a number assumes. Average cost, Yahoo prices, and daily FX are
    approximations and should read as such.
-4. Five surfaces of equal standing. Watchlist, The Hunt, Paper, alerts, and settings
+4. Five surfaces of equal standing. Watchlist, The Hunt, Portfolio, alerts, and settings
    are one terminal, not a core feature with satellites.
 5. Never fabricate financial data. A missing price is stated, not filled in.

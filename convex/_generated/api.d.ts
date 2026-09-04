@@ -21,6 +21,7 @@ import type * as intelligenceActions from "../intelligenceActions.js";
 import type * as market from "../market.js";
 import type * as portfolio from "../portfolio.js";
 import type * as portfolioActions from "../portfolioActions.js";
+import type * as preferences from "../preferences.js";
 import type * as users from "../users.js";
 import type * as watchlist from "../watchlist.js";
 
@@ -44,6 +45,7 @@ declare const fullApi: ApiFromModules<{
   market: typeof market;
   portfolio: typeof portfolio;
   portfolioActions: typeof portfolioActions;
+  preferences: typeof preferences;
   users: typeof users;
   watchlist: typeof watchlist;
 }>;

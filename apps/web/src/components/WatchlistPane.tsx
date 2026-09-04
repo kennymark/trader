@@ -6,6 +6,7 @@ import { authClient } from "../lib/auth";
 import { AUTH_ENABLED } from "../lib/features";
 import { getGuestWatchlist, removeGuestSymbol } from "../lib/guestWatchlist";
 import { fetchQuotes, fetchWatchlist, removeWatchlist } from "../lib/queries";
+import { usePreferences } from "../lib/preferences";
 
 type Props = {
   selectedSymbol: string | null;
@@ -20,6 +21,7 @@ export function WatchlistPane({
   onSymbolsLoaded,
 }: Props) {
   const qc = useQueryClient();
+  const { prefs } = usePreferences();
   const { data: session, isPending: sessionPending } = authClient.useSession();
   const isAuthed = !AUTH_ENABLED || Boolean(session?.user);
   const useGuest = AUTH_ENABLED && !session?.user;
@@ -47,7 +49,8 @@ export function WatchlistPane({
     queryKey: ["quotes", symbols.join(",")],
     queryFn: () => fetchQuotes(symbols),
     enabled: symbols.length > 0,
-    refetchInterval: 45_000,
+    // 0 seconds means the reader turned polling off.
+    refetchInterval: prefs.quoteRefreshSeconds > 0 ? prefs.quoteRefreshSeconds * 1000 : false,
     staleTime: 30_000,
   });
 
