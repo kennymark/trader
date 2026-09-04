@@ -1,27 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "npm install",
-  "buildCommand": "npm run build -w @trader/shared && npm run build -w @trader/api && npm run build -w @trader/web",
+  "buildCommand": "npx convex deploy --cmd 'npm run build' --cmd-url-env-var-name VITE_CONVEX_URL",
   "outputDirectory": "apps/web/dist",
-  "functions": {
-    "api/index.ts": {
-      "maxDuration": 60
-    }
-  },
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "/api"
-    },
-    {
-      "source": "/((?!api/).*)",
+      "source": "/((?!assets/).*)",
       "destination": "/index.html"
-    }
-  ],
-  "crons": [
-    {
-      "path": "/api/cron/alerts",
-      "schedule": "0 9 * * *"
     }
   ]
 }

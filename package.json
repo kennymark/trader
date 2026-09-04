@@ -2,25 +2,29 @@
   "name": "trader",
   "private": true,
   "workspaces": [
-    "apps/*",
+    "apps/web",
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run build -w @trader/shared && npm run dev:api & npm run dev:web",
+    "dev": "npm run build -w @trader/shared && npx convex dev & npm run dev -w @trader/web",
     "dev:web": "npm run dev -w @trader/web",
-    "dev:api": "npm run dev -w @trader/api",
-    "build": "npm run build -w @trader/shared && npm run build -w @trader/api && npm run build -w @trader/web",
-    "test": "npm run test -w @trader/api",
-    "db:generate": "npm run db:generate -w @trader/api",
-    "db:migrate": "npm run db:migrate -w @trader/api",
-    "db:push": "npm run db:push -w @trader/api",
-    "db:init": "psql -d trader -f apps/api/drizzle/0000_init.sql"
+    "dev:convex": "npx convex dev",
+    "build": "npm run build -w @trader/shared && npm run build -w @trader/web",
+    "test": "vitest run",
+    "deploy": "npx convex deploy --cmd 'npm run build' --cmd-url-env-var-name VITE_CONVEX_URL"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
-    "drizzle-orm": "^0.45.2",
-    "postgres": "^3.4.9"
+    "@convex-dev/better-auth": "^0.12.5",
+    "better-auth": ">=1.6.11 <1.7.0",
+    "convex": "^1.45.0",
+    "resend": "^6.26.0",
+    "yahoo-finance2": "^4.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^26.4.1",
+    "vitest": "^3.2.7"
   }
 }

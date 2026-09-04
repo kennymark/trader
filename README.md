@@ -4,7 +4,7 @@ Track a watchlist, import your broker history, and find out what your selling ac
 
 **Live: https://trader-eight-iota.vercel.app**
 
-Auth is off by default for local work: with `AUTH_ENABLED` / `VITE_AUTH_ENABLED` unset, the API scopes every request to a single local user. The deployment runs with both set to `true`, so guests can browse market data and only a signed-in user sees a portfolio.
+Guests can browse market data and search; a portfolio needs a sign-in. Auth is Better Auth running inside Convex, with email and password enabled and Google optional.
 
 ![Watchlist and chart](docs/screenshots/watchlist.png)
 
@@ -41,68 +41,68 @@ Positions are grouped by ISIN, so a ticker change carries its history across. Re
 ## Stack
 
 - **Web:** Vite, React, TanStack Query, TanStack Router, Lightweight Charts
-- **API:** Hono, Better Auth (optional), Drizzle, Yahoo Finance
-- **DB:** PostgreSQL
-- **Alerts:** node-cron worker → Email (Resend), Telegram, Twist
+- **Backend:** Convex functions — queries and mutations in the V8 runtime, Node actions for anything touching Yahoo Finance
+- **Auth:** Better Auth via the Convex component
+- **Alerts:** a Convex cron every 5 minutes → Email (Resend), Telegram, Twist
+
+The backend is entirely Convex. Market data, the Freetrade import, the P&L
+computations and the never-sold replay all run as Node actions, because
+`yahoo-finance2` needs Node builtins that the default runtime does not have.
+The pure computation lives in `lib/` outside `convex/`, so it is bundled into
+whichever runtime imports it and stays unit-testable.
 
 ## Quick start
 
-### 1. Database
-
-```bash
-docker compose up -d
-# or apply SQL manually:
-# psql -d trader -f apps/api/drizzle/0000_init.sql
-```
-
-Default connection string:
-
-```
-postgresql://trader:trader@localhost:5432/trader
-```
-
-Migrations live in `apps/api/drizzle` and apply in order: `0000_init`, `0001_channel_symbol`, `0002_intelligence`, `0003_freetrade`.
-
-### 2. Environment
-
-```bash
-cp .env.example apps/api/.env
-# optional web flag (also in apps/web/.env):
-# VITE_AUTH_ENABLED=false
-```
-
-| Variable | Purpose |
-|----------|---------|
-| `DATABASE_URL` | Postgres connection |
-| `AUTH_ENABLED` | API: `true` to require sessions (default `false`) |
-| `VITE_AUTH_ENABLED` | Web: `true` to show Sign in / login page |
-| `BETTER_AUTH_SECRET` | Session secret (needed when auth is on) |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth |
-| `LOCAL_USER_ID` | Used while auth is off |
-| `RESEND_API_KEY` / `EMAIL_FROM` | Email alerts (dry-runs if unset) |
-| `TELEGRAM_BOT_TOKEN` / `TELEGRAM_BOT_USERNAME` | Telegram bot |
-| `TWIST_ACCESS_TOKEN` | Optional global Twist token |
-| `DEEPSEEK_API_KEY` | Optional AI rationales on The Hunt |
-| `VITE_API_URL` | Web: API base URL when it is not same-origin |
-
-### 3. Install & run
+### 1. Install
 
 ```bash
 npm install
 npm run build -w @trader/shared
-npm run dev:api   # http://localhost:3001
-npm run dev:web   # http://localhost:5173
 ```
 
-Open the web app — no sign-in required while auth flags are false.
+### 2. Convex
 
-To turn auth back on: set `AUTH_ENABLED=true` in `apps/api/.env` and `VITE_AUTH_ENABLED=true` in `apps/web/.env`, then restart both.
+```bash
+npx convex dev
+```
+
+The first run provisions a dev deployment and writes `CONVEX_DEPLOYMENT`,
+`VITE_CONVEX_URL` and `VITE_CONVEX_SITE_URL` into the repo-root `.env.local`.
+Vite reads env from the repo root (`envDir` in `apps/web/vite.config.ts`), so
+there is one env file, not two.
+
+Set the deployment's own secrets:
+
+```bash
+npx convex env set SITE_URL http://localhost:5173
+npx convex env set BETTER_AUTH_SECRET "$(openssl rand -hex 32)"
+```
+
+| Convex variable | Purpose |
+|-----------------|---------|
+| `SITE_URL` | Origin the app is served from; Better Auth trusts it |
+| `BETTER_AUTH_SECRET` | Session secret |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Optional Google sign-in |
+| `RESEND_API_KEY` / `EMAIL_FROM` | Email alerts (dry-runs if unset) |
+| `TELEGRAM_BOT_TOKEN` / `TELEGRAM_BOT_USERNAME` | Telegram bot |
+| `TELEGRAM_WEBHOOK_SECRET` | Optional webhook header check |
+| `TWIST_ACCESS_TOKEN` | Optional Twist token |
+| `DEEPSEEK_API_KEY` | Optional AI rationales on The Hunt |
+
+### 3. Run
+
+```bash
+npx convex dev          # one terminal: functions, codegen, live push
+npm run dev:web         # another: http://localhost:5173
+```
 
 ### 4. Tests
 
 ```bash
 npm test
 ```
+
+Covers the never-sold replay, the Freetrade parser and opportunity scoring.
 
 ## App surfaces
 
@@ -112,6 +112,9 @@ npm test
 | `/intelligence` | The Hunt: opportunity scores, catalysts, predictions, scenarios |
 | `/portfolio` | Paper: imported broker P&L, per-position drawers, vs-market comparison |
 | `/settings` | Broker import, channels, Telegram link |
+
+Every call the UI makes goes through `apps/web/src/lib/queries.ts`, which is the
+only file that knows about Convex.
 
 ## Importing from Freetrade
 
@@ -128,47 +131,41 @@ For the selected range and customizable inputs:
 
 ## Alerts worker
 
-Every 2 minutes (configurable via `ALERT_CRON`), the API evaluates rules, delivers to channels, and writes `alert_events`. Without provider API keys, deliveries are logged as dry-runs.
+`convex/crons.ts` runs the alert cycle every 5 minutes. It evaluates enabled rules, delivers to the channels each rule names, and writes an `alertEvents` row. Without provider API keys, deliveries are logged as dry-runs.
 
 ## Telegram setup
 
 1. Create a bot with BotFather; set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_BOT_USERNAME`
-2. Point the webhook at `POST /api/telegram/webhook` (optional secret header)
+2. Point the webhook at `POST https://<deployment>.convex.site/telegram/webhook` (optional secret header)
 3. In the app, open **Channels → Generate Telegram link** and tap Start
 
-## Deploying to Vercel + Neon
+## Deploying
 
-Live at **https://trader-eight-iota.vercel.app**.
+Convex hosts the backend; Vercel serves the built SPA. One Vercel build does both:
 
-The web build and the API ship from one Vercel project. `api/index.ts` serves the same Hono app used locally, and a rewrite sends every `/api/*` path to it, so the API is same-origin and needs no `VITE_API_URL`. Alerts run from a Vercel Cron trigger instead of node-cron.
+```
+npx convex deploy --cmd 'npm run build' --cmd-url-env-var-name VITE_CONVEX_URL
+```
 
-1. **Database.** Create a Neon project and copy the **pooled** connection string, the host containing `-pooler`. Apply the four migrations in `apps/api/drizzle` in order.
-2. **Environment.** Set these on the Vercel project:
+That pushes the functions to the production Convex deployment and then builds
+the frontend with that deployment's URL injected. It needs `CONVEX_DEPLOY_KEY`
+in the Vercel project, minted with `npx convex deployment token create <name> --prod`.
 
-| Variable | Value |
-|----------|-------|
-| `DATABASE_URL` | Neon pooled connection string |
-| `AUTH_ENABLED` / `VITE_AUTH_ENABLED` | `true` — see the warning below |
-| `BETTER_AUTH_SECRET` | A long random string |
-| `API_ORIGIN` / `WEB_ORIGIN` | The deployment URL, e.g. `https://trader.vercel.app` |
-| `CRON_SECRET` | A long random string, sent by Vercel Cron as a bearer token |
+Vercel also needs `VITE_CONVEX_SITE_URL` (the `.convex.site` origin, where the
+auth endpoints live) and `VITE_AUTH_ENABLED=true`. On the production Convex
+deployment, set `SITE_URL` to the deployed origin so Better Auth trusts it.
 
-3. **Deploy.** `vercel --prod`. The build runs shared, then API, then web.
-
-> **Turn auth on before exposing a deployment.** With `AUTH_ENABLED=false` every request is scoped to a single local user, so anyone who opens the URL sees and can modify that portfolio. That default is fine on localhost and wrong on the public internet.
-
-Three things behave differently in serverless:
-
-- The database client holds one connection per invocation with prepared statements off, because Neon's pooler runs in transaction mode.
-- The function must export named HTTP methods rather than a default export. A default export is invoked with Node's `(req, res)` signature, which Hono cannot consume.
-- Hobby plans allow only daily cron, so `vercel.json` runs alerts once a day. Anything more frequent needs a Pro plan, or any external scheduler sending `Authorization: Bearer $CRON_SECRET` to `/api/cron/alerts`.
+Two things to know. The auth endpoints live on a different origin from the app,
+so the client uses Better Auth's cross-domain plugin pair; without it, sign-in
+silently fails. And Convex crons have no plan-tier floor, so alerts run every
+five minutes rather than the once a day a Vercel Hobby plan allows.
 
 ## Project layout
 
 ```
-api               Vercel function entry (serves the Hono app)
+convex            Convex functions, schema, auth, crons
+lib               Pure computation shared by the functions, plus its tests
 apps/web          React SPA
-apps/api          Hono API + cron worker
 packages/shared   Zod schemas + shared types
 docs/screenshots  README images
 ```
