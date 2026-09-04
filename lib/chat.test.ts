@@ -155,8 +155,17 @@ describe("buildPortfolioBrief", () => {
 describe("buildSystemPrompt", () => {
   it("puts the rules before the figures", () => {
     const prompt = buildSystemPrompt(context());
-    expect(prompt.indexOf("Never invent a price")).toBeLessThan(
-      prompt.indexOf("Portfolio as of"),
-    );
+    const rules = prompt.indexOf("You are the analyst");
+    const figures = prompt.indexOf("Portfolio as of");
+    // Both must be present: indexOf returns -1 for a missing phrase, which
+    // would satisfy a naive ordering assertion without proving anything.
+    expect(rules).toBeGreaterThanOrEqual(0);
+    expect(figures).toBeGreaterThan(rules);
+  });
+
+  it("tells the model to look prices up rather than recall them", () => {
+    const prompt = buildSystemPrompt(context());
+    expect(prompt).toContain("Do not answer a question about current prices from memory");
+    expect(prompt).toContain("search for the ticker first");
   });
 });

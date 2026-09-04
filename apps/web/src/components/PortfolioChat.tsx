@@ -5,11 +5,13 @@ import { authClient } from "../lib/auth";
 import { AUTH_ENABLED } from "../lib/features";
 import { askChat, clearChat, fetchChatHistory, fetchChatStatus } from "../lib/queries";
 
+// A mix of both kinds, so it is visible that the assistant reads live market
+// data as well as the book.
 const PROMPTS = [
   "Which position has cost me the most?",
-  "How has my realised P&L moved over the last year?",
+  "What is Moderna trading at right now?",
   "What is the biggest concentration in my book?",
-  "Which of my watchlist names scores highest, and why?",
+  "When does Nvidia next report, and what is its forward P/E?",
 ];
 
 /**
@@ -111,8 +113,8 @@ export function PortfolioChat() {
           <div className="chat-opening">
             <p>
               {status.data.hasPortfolio
-                ? "Ask about anything in your book: a position, a period, a decision you made."
-                : "No broker data imported yet, so answers will be limited to your watchlist and scoring."}
+                ? "Ask about anything in your book — a position, a period, a decision you made — or about any listed company, which it will look up."
+                : "No broker data imported yet, so questions about your own positions will be thin. Market questions work either way."}
             </p>
             <ul className="chat-prompts">
               {PROMPTS.map((p) => (
