@@ -406,7 +406,39 @@ function toLegacyRecommendation(card: OpportunityCard): IntelligenceRecommendati
   };
 }
 
-function buildFeed(
+/**
+ * The drivers behind a call, in the order they carried it. A signal already
+ * names a fact and which way it leans, so the reasons are the ones that lean
+ * the same way as the call — the rest is what the risk line is for.
+ */
+function reasonsFor(card: OpportunityCard): string[] {
+  const aligned = card.signals.filter((s) => s.bias === card.action);
+  const picked = (aligned.length ? aligned : card.signals).slice(0, 3);
+  const reasons = picked.map((s) => `${s.label}: ${s.value}`);
+  if (card.potentialUpsidePct != null) {
+    reasons.push(`Analysts see ~${card.potentialUpsidePct.toFixed(0)}% upside`);
+  }
+  return reasons.slice(0, 4);
+}
+
+/** The one thing that would make the call wrong. */
+function riskFor(card: OpportunityCard): string | null {
+  const against = card.signals.find((s) => s.bias !== card.action && s.bias !== "neutral");
+  if (against) return `${against.label}: ${against.value}`;
+  if (card.maxDrawdown1yPct != null && card.maxDrawdown1yPct < -15) {
+    return `Fell ${Math.abs(card.maxDrawdown1yPct).toFixed(0)}% at its worst over the last year`;
+  }
+  if (card.riskScore >= 60) return `Risk score ${card.riskScore}/100`;
+  return null;
+}
+
+const ACTION_WORD: Record<string, string> = {
+  buy: "Buy",
+  hold: "Hold",
+  sell: "Sell",
+};
+
+export function buildFeed(
   opportunities: OpportunityCard[],
   catalysts: CatalystEvent[],
 ): FeedItem[] {
@@ -418,10 +450,15 @@ function buildFeed(
       id: `opp-${o.symbol}`,
       kind: "opportunity",
       symbol: o.symbol,
-      title: `${o.symbol} · Opportunity ${o.opportunityScore}`,
-      body: o.keyReason,
+      // The call leads. A score alone tells you nothing you can act on.
+      title: `${ACTION_WORD[o.action] ?? o.action} ${o.symbol}`,
+      body: o.rationale || o.keyReason,
       score: o.opportunityScore,
       createdAt: now,
+      action: o.action,
+      reasons: reasonsFor(o),
+      risk: riskFor(o),
+      confidence: o.confidence,
     });
   }
 
@@ -435,6 +472,11 @@ function buildFeed(
         body: h.fact,
         score: h.severity === "high" ? 80 : h.severity === "medium" ? 60 : 40,
         createdAt: h.detectedAt,
+        // What happened is news; what to do about it is still the standing call.
+        action: o.action,
+        reasons: [`Standing call: ${ACTION_WORD[o.action] ?? o.action} · ${o.keyReason}`],
+        risk: null,
+        confidence: o.confidence,
       });
     }
   }
@@ -448,6 +490,10 @@ function buildFeed(
       body: c.date ? `Scheduled ${new Date(c.date).toLocaleDateString()}` : "Date TBD",
       score: null,
       createdAt: now,
+      action: null,
+      reasons: [],
+      risk: null,
+      confidence: null,
     });
   }
 

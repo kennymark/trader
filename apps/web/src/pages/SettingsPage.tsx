@@ -1,23 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   fetchAlertEvents,
   fetchAlerts,
-  fetchChannels,
   deleteAlert,
   updateAlert,
-  deleteChannel,
-  updateChannel,
   fetchFreetrade,
-  fetchWatchlist,
   importFreetradeCsv,
   disconnectFreetrade,
 } from "../lib/queries";
-import { SymbolChannels } from "../components/SymbolChannels";
+import { DeliveryDestinations } from "../components/DeliveryDestinations";
+import { RuleForm } from "../components/RuleForm";
 import { useConfirm } from "../components/ConfirmProvider";
 import { formatDateTime } from "../lib/dates";
-import { describeRule, describeRuleDetail } from "../lib/alertText";
+import { describeRule, describeRuleDetail, describeScope } from "../lib/alertText";
 import { authClient } from "../lib/auth";
 import { AUTH_ENABLED } from "../lib/features";
 import { usePreferences, useResetPreferences, useSavePreferences } from "../lib/preferences";
@@ -26,8 +23,8 @@ import type {
   AlertBaseline,
   AlertEvent,
   AlertRule,
+  AlertScope,
   HistoryRange,
-  NotificationChannel,
   PortfolioHolding,
   UserPreferences,
   WorkTab,
@@ -55,8 +52,6 @@ const CHART_RANGES: Array<[HistoryRange, string]> = [
 const WORK_TABS: Array<[WorkTab, string]> = [
   ["chart", "Chart"],
   ["intelligence", "Intelligence"],
-  ["feed", "Feed"],
-  ["record", "Track record"],
 ];
 
 const BASELINES: Array<[AlertBaseline, string]> = [
@@ -623,92 +618,13 @@ function IntelligenceSection() {
   );
 }
 
-function DeliverySection({
-  channels,
-  loading,
-  onToggle,
-  onRemove,
-}: {
-  channels: NotificationChannel[];
-  loading: boolean;
-  onToggle: (id: string, enabled: boolean) => void;
-  onRemove: (channel: NotificationChannel) => Promise<void>;
-}) {
-  const watchlist = useQuery({ queryKey: ["watchlist", "server"], queryFn: fetchWatchlist });
-
-  // Every stock you could set delivery up for: the watchlist, plus any name
-  // that already has one, so an old channel never becomes unreachable.
-  const symbols = useMemo(() => {
-    const set = new Set<string>();
-    for (const w of watchlist.data ?? []) set.add(w.symbol.toUpperCase());
-    for (const c of channels) if (c.symbol) set.add(c.symbol.toUpperCase());
-    return [...set].sort();
-  }, [watchlist.data, channels]);
-
-  const [symbol, setSymbol] = useState<string>("");
-  const selected = symbol && symbols.includes(symbol) ? symbol : symbols[0] || "";
-
-  if (!symbols.length) {
-    return (
-      <p className="muted">
-        Add a stock to your watchlist first — a delivery belongs to a name.
-      </p>
-    );
-  }
-
+/** Creating a rule that watches a whole list rather than one ticker. */
+function WideRuleComposer() {
+  const [scope, setScope] = useState<AlertScope>("watchlist");
   return (
-    <>
-      <Field label="Set up delivery for" hint="Each stock has its own deliveries.">
-        <select
-          value={selected}
-          onChange={(e) => setSymbol(e.target.value)}
-          className="setting-select"
-        >
-          {symbols.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-      </Field>
-
-      {selected ? <SymbolChannels key={selected} symbol={selected} embedded /> : null}
-
-      <h3 className="settings-sub">Everything set up</h3>
-      <div className="card-list">
-        {channels.map((ch) => (
-          <div className="card" key={ch.id}>
-            <div className="card-row">
-              <div>
-                <div className="settings-card-title">
-                  {ch.symbol ? ch.symbol : <span className="muted">Unassigned</span>} · {ch.label}
-                </div>
-                <div className="muted">
-                  <span className={`badge ${ch.enabled ? "badge-on" : ""}`}>{ch.type}</span>{" "}
-                  {ch.type === "email" && String(ch.config.address || "")}
-                  {ch.type === "telegram" && `chat ${String(ch.config.chatId || "")}`}
-                  {ch.type === "twist" &&
-                    `thread ${String(ch.config.conversationId || ch.config.threadId || "")}`}
-                </div>
-              </div>
-              <div className="settings-card-actions">
-                <button type="button" className="btn" onClick={() => onToggle(ch.id, !ch.enabled)}>
-                  {ch.enabled ? "Disable" : "Enable"}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-danger"
-                  onClick={() => void onRemove(ch)}
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-        {!channels.length && !loading && <div className="muted">No deliveries yet.</div>}
-      </div>
-    </>
+    <div className="wide-rule-composer">
+      <RuleForm scope={scope} onScopeChange={setScope} submitLabel="Create rule" />
+    </div>
   );
 }
 
@@ -718,7 +634,6 @@ export function SettingsPage() {
 
   const alerts = useQuery({ queryKey: ["alerts"], queryFn: fetchAlerts });
   const events = useQuery({ queryKey: ["alert-events"], queryFn: fetchAlertEvents });
-  const channels = useQuery({ queryKey: ["channels"], queryFn: fetchChannels });
   const updateAlertMut = useMutation({
     mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) =>
       updateAlert(id, { enabled }),
@@ -730,24 +645,13 @@ export function SettingsPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["alerts", "alert-events"] }),
   });
 
-  const updateChannelMut = useMutation({
-    mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) =>
-      updateChannel(id, { enabled }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["channels"] }),
-  });
-
-  const deleteChannelMut = useMutation({
-    mutationFn: deleteChannel,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["channels"] }),
-  });
-
   return (
     <div className="page page-settings">
       <header className="settings-head">
         <h1>Settings</h1>
         <p className="page-lead">
-          How the terminal behaves, and what it is connected to. Per-stock alerts and channels
-          are set from the stock itself; what is here are the defaults they start from.
+          How the terminal behaves, and what it is connected to. Alert rules are set from the
+          stock itself; their defaults, and the destinations every rule can send to, are here.
         </p>
       </header>
 
@@ -770,9 +674,16 @@ export function SettingsPage() {
           <Section
             id="alerts"
             title="Notifications"
-            lead="Rules decide when you hear about a stock and are set from its Notify me drawer. Deliveries decide where the message goes, and are set up here."
+            lead="A rule decides when you hear about a stock, and is set from its Notify me drawer. A destination decides where the message lands, and is shared by every rule."
           >
             <AlertDefaults />
+
+            <h3 className="settings-sub">Watch everything</h3>
+            <p className="muted settings-sub-lead">
+              A rule here covers a whole list rather than one name, so a move worth hearing
+              about reaches you even in a stock you weren’t thinking about.
+            </p>
+            <WideRuleComposer />
 
             <h3 className="settings-sub">Your rules</h3>
             <div className="card-list">
@@ -781,7 +692,7 @@ export function SettingsPage() {
                   <div className="card-row">
                     <div>
                       <div className="settings-card-title">
-                        {rule.symbol} · {describeRule(rule)}
+                        {describeScope(rule)} · {describeRule(rule)}
                         {rule.enabled ? "" : " · off"}
                       </div>
                       <div className="muted">{describeRuleDetail(rule)}</div>
@@ -804,7 +715,8 @@ export function SettingsPage() {
                             title: "Delete this rule?",
                             body: (
                               <>
-                                {rule.symbol} will stop alerting on “{describeRule(rule)}”.
+                                {describeScope(rule)} will stop alerting on “
+                                {describeRule(rule)}”.
                                 This cannot be undone.
                               </>
                             ),
@@ -825,24 +737,11 @@ export function SettingsPage() {
             </div>
 
             <h3 className="settings-sub">Delivery</h3>
-            <DeliverySection
-              channels={(channels.data as NotificationChannel[] | undefined) ?? []}
-              loading={channels.isLoading}
-              onToggle={(id, enabled) => updateChannelMut.mutate({ id, enabled })}
-              onRemove={async (ch) => {
-                const ok = await confirm({
-                  title: `Remove ${ch.label}?`,
-                  body: (
-                    <>
-                      Any rule on {ch.symbol || "this stock"} that sends here loses a
-                      delivery, and a rule left with none stops reaching you.
-                    </>
-                  ),
-                  confirmLabel: "Remove delivery",
-                });
-                if (ok) deleteChannelMut.mutate(ch.id);
-              }}
-            />
+            <p className="muted settings-sub-lead">
+              Every firing lands in the bell. These are the places it reaches you beyond the
+              app — shared by the account, with each rule picking which it sends to.
+            </p>
+            <DeliveryDestinations rules={(alerts.data as AlertRule[] | undefined) ?? []} />
 
             <h3 className="settings-sub">Recent firings</h3>
             <div className="card-list">

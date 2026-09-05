@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { authClient } from "../lib/auth";
 import { SymbolSearch } from "./SymbolSearch";
+import { NotificationBell } from "./NotificationBell";
 import { ChatDock } from "./ChatDock";
 import { AUTH_ENABLED } from "../lib/features";
 
@@ -87,6 +88,7 @@ export function AppShell({ user, children }: Props) {
       <div className="app-main">
         <header className="app-topbar">
           <SymbolSearch />
+          <NotificationBell />
         </header>
         <main className="app-content">{children}</main>
       </div>

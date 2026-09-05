@@ -14,4 +14,12 @@ crons.interval(
   {},
 );
 
+// After the US close, so the day's price is the one the call is recorded at.
+crons.daily(
+  "record the day's calls",
+  { hourUTC: 21, minuteUTC: 30 },
+  internal.intelligenceActions.recordDaily,
+  {},
+);
+
 export default crons;

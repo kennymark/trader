@@ -1,10 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 import { ChartPane } from "../components/ChartPane";
 import { WatchlistPane } from "../components/WatchlistPane";
 import { SymbolIntelligence } from "../components/SymbolIntelligence";
-import { FeedList, PredictionsPanel } from "./IntelligencePage";
-import { fetchIntelligence, fetchPredictions } from "../lib/queries";
 import { usePreferences } from "../lib/preferences";
 import {
   readSelectedSymbol,
@@ -17,8 +14,6 @@ import type { WorkTab as Tab } from "@trader/shared";
 const TABS: Array<[Tab, string]> = [
   ["chart", "Chart"],
   ["intelligence", "Intelligence"],
-  ["feed", "Feed"],
-  ["record", "Track record"],
 ];
 
 /**
@@ -60,21 +55,6 @@ export function HomePage() {
     });
   }, []);
 
-  const hunt = useQuery({
-    queryKey: ["intelligence", "watchlist"],
-    queryFn: () => fetchIntelligence(),
-    staleTime: 5 * 60_000,
-    retry: false,
-  });
-
-  const predictions = useQuery({
-    queryKey: ["predictions"],
-    queryFn: fetchPredictions,
-    enabled: tab === "record",
-    staleTime: 60_000,
-    retry: false,
-  });
-
   return (
     <div className="two-pane">
       <WatchlistPane
@@ -113,27 +93,6 @@ export function HomePage() {
             <p className="work-empty">Pick a stock to read its intelligence.</p>
           ))}
 
-        {tab === "feed" && (
-          <div className="work-scroll">
-            {hunt.isPending && <p className="work-empty">Scoring your list…</p>}
-            {hunt.isError && <p className="work-empty">Couldn’t load the feed.</p>}
-            {hunt.data && <FeedList items={hunt.data.feed} />}
-          </div>
-        )}
-
-        {tab === "record" && (
-          <div className="work-scroll">
-            {predictions.isPending && <p className="work-empty">Loading the record…</p>}
-            {predictions.isError && <p className="work-empty">Couldn’t load the record.</p>}
-            {predictions.data && (
-              <PredictionsPanel
-                data={predictions.data}
-                onRefreshHunt={() => hunt.refetch()}
-                refreshing={hunt.isFetching}
-              />
-            )}
-          </div>
-        )}
       </div>
     </div>
   );

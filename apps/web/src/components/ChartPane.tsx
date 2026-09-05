@@ -51,7 +51,7 @@ export function ChartPane({ symbol }: Props) {
       <div className="pane-right">
         <div className="empty-state">
           <strong>Select a stock</strong>
-          <span>Pick a symbol from your watchlist to see history, intelligence, alerts, and channels.</span>
+          <span>Pick a symbol from your watchlist to see history, intelligence, and alerts.</span>
         </div>
       </div>
     );

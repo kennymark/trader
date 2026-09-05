@@ -24,6 +24,8 @@ import {
 import { formatDate, formatDateTime } from "../lib/dates";
 import { CacheNotice } from "../components/CacheNotice";
 import { useConfirm } from "../components/ConfirmProvider";
+import { ContextMenu } from "../components/ContextMenu";
+import { useWatchlist } from "../lib/watchlistActions";
 import { WhatIfPanel } from "../components/WhatIfPanel";
 
 type Filter = "all" | "winners" | "losers" | "open" | "closed" | "never_sold";
@@ -385,6 +387,33 @@ function PortfolioBody({
   selected: SymbolPerformance | null;
   onCloseDetail: () => void;
 }) {
+  const watchlist = useWatchlist();
+  const [menu, setMenu] = useState<{ x: number; y: number; row: SymbolPerformance } | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  // The confirmation is a line under the toolbar, not a dialog: adding to the
+  // watchlist is reversible, so it should not stop the reader.
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(null), 4000);
+    return () => clearTimeout(timer);
+  }, [notice]);
+
+  function openMenu(e: React.MouseEvent, row: SymbolPerformance) {
+    e.preventDefault();
+    setMenu({ x: e.clientX, y: e.clientY, row });
+  }
+
+  function addToWatchlist(row: SymbolPerformance) {
+    watchlist.add.mutate(
+      { symbol: row.symbol, displayName: row.displayName },
+      {
+        onSuccess: () => setNotice(`${row.symbol} added to your watchlist.`),
+        onError: (err) => setNotice(`Couldn’t add ${row.symbol}: ${(err as Error).message}`),
+      },
+    );
+  }
+
   const featured = performance.insights
     .filter((i) =>
       ["concentration", "worst", "bags", "hold", "active", "rename"].includes(i.id),
@@ -500,6 +529,10 @@ function PortfolioBody({
         </div>
       </div>
 
+      <p className="pnl-row-notice muted" role="status" aria-live="polite">
+        {notice ?? "Right-click a row — or use its ⋯ button — to add the stock to your watchlist."}
+      </p>
+
       <div className="intel-table-wrap pnl-ledger">
         <table className="intel-table pnl-table">
           <thead>
@@ -529,6 +562,7 @@ function PortfolioBody({
               <th className="pnl-th-sort" onClick={() => sortBy("return")}>
                 Return {sortArrow("return", sort, sortDir)}
               </th>
+              <th aria-label="Row actions" />
             </tr>
           </thead>
           <tbody>
@@ -537,6 +571,7 @@ function PortfolioBody({
                   key={p.key}
                   className={selectedKey === p.key ? "pnl-row-selected" : ""}
                   onClick={() => onSelect(p.key)}
+                  onContextMenu={(e) => openMenu(e, p)}
                 >
                   <td>
                     <div className="intel-symbol">{p.symbol}</div>
@@ -573,11 +608,25 @@ function PortfolioBody({
                       ? "—"
                       : `${p.returnPct > 0 ? "+" : ""}${p.returnPct.toFixed(1)}%`}
                   </td>
+                  <td className="pnl-row-actions">
+                    <button
+                      type="button"
+                      className="btn btn-ghost pnl-row-menu-btn"
+                      aria-label={`Actions for ${p.symbol}`}
+                      aria-haspopup="menu"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openMenu(e, p);
+                      }}
+                    >
+                      ⋯
+                    </button>
+                  </td>
                 </tr>
               ))}
               {!pageRows.length ? (
                 <tr>
-                  <td colSpan={9} className="muted">
+                  <td colSpan={10} className="muted">
                     Nothing matches this filter.
                   </td>
                 </tr>
@@ -593,6 +642,27 @@ function PortfolioBody({
             setPageSize={setPageSize}
           />
         </div>
+
+      {menu ? (
+        <ContextMenu
+          x={menu.x}
+          y={menu.y}
+          heading={`${menu.row.symbol}${menu.row.displayName ? ` · ${menu.row.displayName}` : ""}`}
+          onClose={() => setMenu(null)}
+          items={[
+            {
+              label: "Add to watchlist",
+              hint: watchlist.isWatching(menu.row.symbol) ? "Already watching" : undefined,
+              disabled: watchlist.isWatching(menu.row.symbol) || watchlist.add.isPending,
+              onSelect: () => addToWatchlist(menu.row),
+            },
+            {
+              label: selectedKey === menu.row.key ? "Hide position detail" : "View position detail",
+              onSelect: () => onSelect(menu.row.key),
+            },
+          ]}
+        />
+      ) : null}
 
       <Drawer
         open={!!selected}

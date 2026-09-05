@@ -57,7 +57,7 @@ export function SymbolSearch() {
   }
 
   const addMutation = useMutation({
-    mutationFn: addWatchlist,
+    mutationFn: (symbol: string) => addWatchlist(symbol),
     onSuccess: (item) => opened(item.symbol),
   });
 

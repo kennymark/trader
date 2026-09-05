@@ -123,3 +123,12 @@ export const rowsFor = internalQuery({
     return rows.map((r) => ({ symbol: r.symbol, displayName: r.displayName }));
   },
 });
+
+/** Every user with at least one symbol, for jobs that run for the whole app. */
+export const userIdsWithSymbols = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const rows = await ctx.db.query("watchlistItems").collect();
+    return [...new Set(rows.map((r) => r.userId))];
+  },
+});

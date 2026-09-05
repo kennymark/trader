@@ -22,20 +22,32 @@ export default defineSchema({
 
   notificationChannels: defineTable({
     userId: v.string(),
-    /** Ticker this channel belongs to; null means legacy/global. */
-    symbol: v.union(v.string(), v.null()),
+    /**
+     * Deprecated. A destination is account-level — the same inbox or chat is
+     * the same place whatever the alert is about — so nothing reads this any
+     * more. Kept optional so rows written before the change still validate.
+     */
+    symbol: v.optional(v.union(v.string(), v.null())),
     type: v.string(), // email | telegram | twist
     label: v.string(),
     config: v.any(),
     enabled: v.boolean(),
     createdAt: v.number(),
-  })
-    .index("by_user", ["userId"])
-    .index("by_user_symbol", ["userId", "symbol"]),
+  }).index("by_user", ["userId"]),
 
   alertRules: defineTable({
     userId: v.string(),
-    symbol: v.string(),
+    /**
+     * What the rule watches. A move worth hearing about is rarely about one
+     * name you picked in advance, so a rule can cover the whole watchlist or
+     * everything you hold. Absent on rows written before scopes existed, which
+     * read as "symbol".
+     */
+    scope: v.optional(
+      v.union(v.literal("symbol"), v.literal("watchlist"), v.literal("holdings")),
+    ),
+    /** Only meaningful when scope is "symbol". */
+    symbol: v.optional(v.string()),
     kind: v.string(), // above | below | pct_drop | pct_rise
     threshold: v.number(),
     baseline: v.string(),
@@ -64,7 +76,8 @@ export default defineSchema({
 
   telegramLinkTokens: defineTable({
     userId: v.string(),
-    symbol: v.union(v.string(), v.null()),
+    /** Deprecated alongside notificationChannels.symbol. */
+    symbol: v.optional(v.union(v.string(), v.null())),
     token: v.string(),
     expiresAt: v.number(),
     createdAt: v.number(),

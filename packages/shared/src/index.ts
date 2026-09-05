@@ -127,9 +127,9 @@ export type WatchlistItem = {
   createdAt: string;
 };
 
+/** A place messages reach you. Account-level — not tied to a stock. */
 export type NotificationChannel = {
   id: string;
-  symbol: string | null;
   type: ChannelType;
   label: string;
   config: Record<string, unknown>;
@@ -137,9 +137,14 @@ export type NotificationChannel = {
   createdAt: string;
 };
 
+/** What a rule watches: one ticker, the whole watchlist, or everything held. */
+export type AlertScope = "symbol" | "watchlist" | "holdings";
+
 export type AlertRule = {
   id: string;
-  symbol: string;
+  scope: AlertScope;
+  /** Null unless the scope is a single symbol. */
+  symbol: string | null;
   kind: AlertKind;
   threshold: number;
   baseline: AlertBaseline;
@@ -610,12 +615,20 @@ export type WhatIfResult = {
 
 export type FeedItem = {
   id: string;
-  kind: "opportunity" | "happening" | "catalyst" | "prediction" | "portfolio";
+  kind: "alert" | "opportunity" | "happening" | "catalyst" | "prediction" | "portfolio";
   symbol: string | null;
   title: string;
   body: string;
   score: number | null;
   createdAt: string;
+  /** The call this item carries. Null for items that only report an event. */
+  action?: IntelligenceAction | null;
+  /** Why the call is what it is — the drivers behind it, in plain words. */
+  reasons?: string[];
+  /** What would make the call wrong. */
+  risk?: string | null;
+  /** How sure the scoring is, 0-100. */
+  confidence?: number | null;
 };
 
 export type PredictionHorizon = 7 | 30 | 90 | 180 | 365;
@@ -678,7 +691,7 @@ export type IntelligenceResponse = {
 
 // --- user preferences ---
 
-export const workTabSchema = z.enum(["chart", "intelligence", "feed", "record"]);
+export const workTabSchema = z.enum(["chart", "intelligence"]);
 export type WorkTab = z.infer<typeof workTabSchema>;
 
 /**

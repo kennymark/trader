@@ -111,10 +111,10 @@ Covers the never-sold replay, the Freetrade parser and opportunity scoring.
 
 | Route | What it does |
 |-------|----------------|
-| `/` | Watchlist, historical chart, per-symbol analytics, alerts and channels |
+| `/` | Watchlist, historical chart, per-symbol analytics, alert rules |
 | `/intelligence` | The Hunt: opportunity scores, catalysts, predictions, scenarios |
 | `/portfolio` | Portfolio: imported broker P&L, per-position drawers, vs-market comparison |
-| `/settings` | Broker import, channels, Telegram link |
+| `/settings` | Broker import, delivery destinations, Telegram link |
 
 Every call the UI makes goes through `apps/web/src/lib/queries.ts`, which is the
 only file that knows about Convex.
@@ -134,7 +134,7 @@ For the selected range and customizable inputs:
 
 ## Alerts worker
 
-`convex/crons.ts` runs the alert cycle every 5 minutes. It evaluates enabled rules, delivers to the channels each rule names, and writes an `alertEvents` row. Without provider API keys, deliveries are logged as dry-runs.
+`convex/crons.ts` runs the alert cycle every 5 minutes. It evaluates enabled rules, delivers to the destinations each rule names, and writes an `alertEvents` row. Without provider API keys, deliveries are logged as dry-runs.
 
 ## Telegram setup
 

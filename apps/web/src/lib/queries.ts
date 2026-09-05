@@ -38,8 +38,8 @@ const asId = <T extends TableNames>(id: string) => id as Id<T>;
 export const fetchWatchlist = async (): Promise<WatchlistItem[]> =>
   ((await convex.query(api.watchlist.list, {})) ?? []) as WatchlistItem[];
 
-export const addWatchlist = (symbol: string) =>
-  convex.mutation(api.watchlist.add, { symbol }) as Promise<WatchlistItem>;
+export const addWatchlist = (symbol: string, displayName?: string) =>
+  convex.mutation(api.watchlist.add, { symbol, displayName }) as Promise<WatchlistItem>;
 
 export const removeWatchlist = (id: string) =>
   convex.mutation(api.watchlist.remove, { id: asId<"watchlistItems">(id) });
@@ -80,9 +80,8 @@ export const fetchChannels = () =>
 
 export const createChannel = (body: {
   type: string;
-  label: string;
+  label?: string;
   config: Record<string, unknown>;
-  symbol: string;
   enabled?: boolean;
 }) => convex.mutation(api.channels.create, body) as Promise<NotificationChannel>;
 
@@ -92,7 +91,6 @@ export const updateChannel = (
     label: string;
     config: Record<string, unknown>;
     enabled: boolean;
-    symbol: string;
   }>,
 ) =>
   convex.mutation(api.channels.update, {
@@ -103,12 +101,11 @@ export const updateChannel = (
 export const deleteChannel = (id: string) =>
   convex.mutation(api.channels.remove, { id: asId<"notificationChannels">(id) });
 
-export const linkTelegram = (symbol: string) =>
-  convex.mutation(api.channels.createTelegramLink, { symbol }) as Promise<{
+export const linkTelegram = () =>
+  convex.mutation(api.channels.createTelegramLink, {}) as Promise<{
     token: string;
     deepLink: string;
     expiresInMinutes: number;
-    symbol: string;
   }>;
 
 // --- alerts ---

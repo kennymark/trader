@@ -1,27 +1,76 @@
 import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
 export type ChannelConfig = Record<string, unknown>;
 
-function getResend() {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) return null;
-  return new Resend(key);
+/**
+ * Email goes out over whichever transport the deployment is configured for.
+ * Resend is the least setup; SMTP is there for anyone who would rather send
+ * from their own server, or from a provider Resend doesn't cover. Set
+ * EMAIL_TRANSPORT to force one, otherwise SMTP wins when a host is configured
+ * and Resend when a key is. With neither, sends are logged and not delivered,
+ * so a dev deployment never mails anyone by accident.
+ */
+export type EmailTransport = "smtp" | "resend" | "dry-run";
+
+export function emailTransport(): EmailTransport {
+  const forced = process.env.EMAIL_TRANSPORT?.trim().toLowerCase();
+  if (forced === "smtp" || forced === "resend" || forced === "dry-run") return forced;
+  if (process.env.SMTP_HOST?.trim()) return "smtp";
+  if (process.env.RESEND_API_KEY?.trim()) return "resend";
+  return "dry-run";
 }
 
-export async function sendEmail(to: string, subject: string, body: string) {
-  const resend = getResend();
-  const from = process.env.EMAIL_FROM || "Stock Alerts <onboarding@resend.dev>";
-  if (!resend) {
-    console.log(`[email:dry-run] to=${to} subject=${subject} body=${body}`);
-    return { ok: true, dryRun: true };
-  }
-  await resend.emails.send({
-    from,
+function emailFrom() {
+  return (
+    process.env.EMAIL_FROM ||
+    process.env.SMTP_USER ||
+    "Stock Alerts <onboarding@resend.dev>"
+  );
+}
+
+async function sendViaResend(to: string, subject: string, body: string) {
+  const key = process.env.RESEND_API_KEY?.trim();
+  if (!key) throw new Error("RESEND_API_KEY is not set");
+  const { error } = await new Resend(key).emails.send({
+    from: emailFrom(),
     to,
     subject,
     text: body,
   });
-  return { ok: true };
+  // The SDK reports failures in the payload rather than by throwing.
+  if (error) throw new Error(`Resend error: ${error.message}`);
+  return { ok: true as const };
+}
+
+async function sendViaSmtp(to: string, subject: string, body: string) {
+  const host = process.env.SMTP_HOST?.trim();
+  if (!host) throw new Error("SMTP_HOST is not set");
+  const port = Number(process.env.SMTP_PORT || 587);
+  const user = process.env.SMTP_USER?.trim();
+  const pass = process.env.SMTP_PASSWORD?.trim();
+
+  const transporter = nodemailer.createTransport({
+    host,
+    port,
+    // 465 is implicit TLS; everything else starts plain and upgrades.
+    secure: process.env.SMTP_SECURE ? process.env.SMTP_SECURE === "true" : port === 465,
+    auth: user && pass ? { user, pass } : undefined,
+  });
+
+  await transporter.sendMail({ from: emailFrom(), to, subject, text: body });
+  return { ok: true as const };
+}
+
+export async function sendEmail(to: string, subject: string, body: string) {
+  const transport = emailTransport();
+  if (transport === "dry-run") {
+    console.log(`[email:dry-run] to=${to} subject=${subject} body=${body}`);
+    return { ok: true, dryRun: true };
+  }
+  return transport === "smtp"
+    ? sendViaSmtp(to, subject, body)
+    : sendViaResend(to, subject, body);
 }
 
 export async function sendTelegram(chatId: string, message: string) {

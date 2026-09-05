@@ -1,7 +1,7 @@
 "use node";
 
 import { v } from "convex/values";
-import { action } from "./_generated/server";
+import { action, internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { requireUserId } from "./users";
 import type { Id } from "./_generated/dataModel";
@@ -10,7 +10,7 @@ import {
   buildSymbolIntelligence,
   runScenarioSimulator,
 } from "../lib/intelligence";
-import { getPredictionDashboard } from "../lib/intelligence/predictions";
+import { evaluateDuePredictions, getPredictionDashboard } from "../lib/intelligence/predictions";
 import { defaultAssumptionsFromFundamentals } from "../lib/intelligence/scenarios";
 import { isDeepSeekEnabled } from "../lib/deepseek";
 import { getFundamentals, getQuotes } from "../lib/yahoo";
@@ -181,5 +181,44 @@ export const scenarios = action({
       trailingEps: fundamentals.trailingEps,
       assumptions: merged,
     });
+  },
+});
+
+/**
+ * The record used to grow only when someone pressed Refresh, which made it a
+ * log of visits rather than of calls. Once a day this scores every list the
+ * way a refresh would — the 24h dedupe in recordPredictionsFromHunt means a
+ * manual refresh the same day adds nothing twice — and grades whatever has
+ * come due, so the track record fills in whether or not the app was opened.
+ */
+export const recordDaily = internalAction({
+  args: {},
+  handler: async (ctx): Promise<{ users: number; recorded: number; evaluated: number }> => {
+    const userIds: string[] = await ctx.runQuery(internal.watchlist.userIdsWithSymbols, {});
+    const store = storeFor(ctx);
+    let recorded = 0;
+    let evaluated = 0;
+
+    for (const userId of userIds) {
+      try {
+        const symbols: string[] = await ctx.runQuery(internal.watchlist.symbolsFor, { userId });
+        if (symbols.length === 0) continue;
+        const prefs: UserPreferences = await ctx.runQuery(internal.preferences.forUser, {
+          userId,
+        });
+        await buildIntelligence(symbols, "watchlist", {
+          userId,
+          store,
+          aiRationales: prefs.huntAiRationales,
+        });
+        recorded++;
+        evaluated += await evaluateDuePredictions(store, userId);
+      } catch (err) {
+        // One list failing must not stop the rest being recorded.
+        console.error(`Daily record failed for user ${userId}`, err);
+      }
+    }
+
+    return { users: userIds.length, recorded, evaluated };
   },
 });

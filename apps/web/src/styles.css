@@ -5067,3 +5067,414 @@ textarea:focus-visible {
   border-color: var(--danger);
   color: var(--accent-contrast);
 }
+
+/* A right-click menu on a portfolio row. It floats over the sheet, so it takes
+   the same licence the confirm dialog does: a 1px keyline and a shadow, which
+   is the only way an overlay reads as separate on a world with no enclosure. */
+.context-menu {
+  position: fixed;
+  z-index: 90;
+  min-width: 15rem;
+  background: var(--bg);
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  box-shadow: 0 24px 60px rgb(0 0 0 / 0.6);
+  padding: 0.3rem 0;
+}
+
+.context-menu-heading {
+  padding: 0.45rem 0.75rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+}
+
+.context-menu-item:hover:not(:disabled) {
+  background: rgb(var(--accent-rgb) / 0.1);
+}
+
+.context-menu-item:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.context-menu-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.pnl-row-notice {
+  margin: 0 0 0.5rem;
+  min-height: 1.2em;
+  font-size: 0.82rem;
+}
+
+.pnl-row-actions {
+  width: 1%;
+  text-align: right;
+}
+
+.pnl-row-menu-btn {
+  border: 0;
+  padding: 0.1rem 0.35rem;
+  line-height: 1;
+  font-size: 1.05rem;
+  color: var(--text-muted);
+  opacity: 0;
+}
+
+.pnl-table tr:hover .pnl-row-menu-btn,
+.pnl-row-menu-btn:focus-visible {
+  opacity: 1;
+  color: var(--ink);
+}
+
+/* No hover and no right-click on touch, so the button is the only way in. */
+@media (hover: none) {
+  .pnl-row-menu-btn {
+    opacity: 1;
+    color: var(--ink);
+  }
+}
+
+/* Delivery destinations: a ruled list, not a stack of cards. Each row states
+   the place, what kind it is, and how many rules lean on it — the last is what
+   makes removing one an informed decision. */
+.delivery-list {
+  list-style: none;
+  margin: 0 0 1.75rem;
+  padding: 0;
+  border-top: 2px solid var(--ink);
+}
+
+.delivery-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.delivery-name {
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.delivery-meta {
+  margin-top: 0.15rem;
+}
+
+.delivery-status {
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.delivery-status.is-on {
+  color: var(--up);
+}
+
+.delivery-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.delivery-empty {
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.delivery-add-types {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0;
+}
+
+.delivery-form {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  max-width: 30rem;
+}
+
+.delivery-form .field {
+  margin-bottom: 0.85rem;
+}
+
+.delivery-form-lead {
+  margin: 0 0 0.85rem;
+}
+
+.settings-sub-lead {
+  margin: -0.4rem 0 1rem;
+}
+
+@media (max-width: 640px) {
+  .delivery-row {
+    grid-template-columns: 1fr auto;
+  }
+
+  .delivery-actions {
+    grid-column: 1 / -1;
+  }
+}
+
+/* The rule form, shared by the per-stock drawer and the account-wide composer. */
+.rule-form-note {
+  margin: -0.35rem 0 1rem;
+}
+
+.rule-form-destinations {
+  margin-bottom: 1rem;
+}
+
+.rule-form-destination-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.rule-form-destination {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+
+.rule-form-error {
+  margin-top: 0.75rem;
+}
+
+.wide-rule-composer {
+  padding-top: 1rem;
+  border-top: 2px solid var(--ink);
+  margin-bottom: 1.75rem;
+}
+
+/* The bell sits opposite the search: the feed is a record of what arrived, not
+   a place you navigate to, so it opens over the page and closes again. */
+.notif-bell {
+  position: relative;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.notif-bell:hover {
+  background: var(--bg-elevated);
+}
+
+.notif-bell svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.notif-dot {
+  position: absolute;
+  top: -0.45rem;
+  right: -0.45rem;
+  min-width: 1.05rem;
+  height: 1.05rem;
+  padding: 0 0.2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--up);
+  color: var(--accent-contrast);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.notif-drawer {
+  padding: 1rem 1.35rem 1.5rem;
+}
+
+.notif-drawer-state {
+  margin: 0;
+}
+
+.track-page-head {
+  margin-bottom: 1.5rem;
+}
+
+.track-page-head h1 {
+  margin: 0 0 0.35rem;
+}
+
+/* The notification feed: every item leads with the call, then the reasons
+   behind it, then what would overturn it, then how past calls on that name
+   scored. Ruled rows, because a stack of cards would say these are separate
+   things when they are one running account. */
+.notif-feed-filter {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.notif-feed-filter button {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+}
+
+.notif-feed-filter button.active {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.notif-feed-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 2px solid var(--ink);
+}
+
+.notif-item {
+  padding: 0.9rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.notif-item-top {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.notif-action {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid currentColor;
+}
+
+.notif-action-buy {
+  color: var(--up);
+}
+
+.notif-action-sell {
+  color: var(--down);
+}
+
+.notif-action-hold {
+  color: var(--text-muted);
+}
+
+.notif-kind {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.notif-symbol {
+  font-weight: 700;
+}
+
+.notif-time,
+.notif-confidence {
+  font-size: 0.78rem;
+}
+
+.notif-confidence {
+  margin-left: auto;
+}
+
+.notif-item-title {
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+
+.notif-item-body {
+  margin: 0 0 0.6rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.notif-why-label {
+  display: block;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+}
+
+.notif-why {
+  margin: 0 0 0.6rem;
+  padding-left: 1.1rem;
+  line-height: 1.55;
+}
+
+.notif-risk {
+  margin: 0 0 0.6rem;
+  padding-left: 0.7rem;
+  border-left: 2px solid var(--down);
+  line-height: 1.5;
+}
+
+.notif-record {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.notif-feed-empty {
+  padding: 0.9rem 0;
+}
+
+.notif-drawer-record {
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 4px solid var(--ink);
+}
+
+/* A fired rule is the one item in the feed that was asked for by name. */
+.notif-item-alert .notif-item-title {
+  font-weight: 700;
+}
+
+.notif-item-alert .notif-kind {
+  color: var(--up);
+}
+
+.rule-form-destination-fixed {
+  cursor: default;
+  color: var(--text-muted);
+  border-style: dashed;
+}

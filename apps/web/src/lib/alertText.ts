@@ -6,6 +6,15 @@ const BASELINE_WORDS: Record<string, string> = {
   absolute: "the price",
 };
 
+/** What the rule watches, as a noun phrase. */
+export function describeScope(
+  rule: Pick<AlertRule, "scope" | "symbol">,
+): string {
+  if (rule.scope === "watchlist") return "Every stock on your watchlist";
+  if (rule.scope === "holdings") return "Every stock you hold";
+  return rule.symbol || "A stock";
+}
+
 /**
  * A rule read as a sentence. `pct_drop 8%` is the stored shape, not something
  * anyone should have to decode on screen.
@@ -41,5 +50,6 @@ export function describeRuleDetail(rule: Pick<AlertRule, "cooldownMinutes" | "ch
     rule.cooldownMinutes >= 60
       ? `${Math.round(rule.cooldownMinutes / 60)}h`
       : `${rule.cooldownMinutes}m`;
-  return `Quiet for ${cooldown} after firing · ${count} ${count === 1 ? "delivery" : "deliveries"}`;
+  const beyond = count === 0 ? "in app only" : `in app + ${count} ${count === 1 ? "destination" : "destinations"}`;
+  return `Quiet for ${cooldown} after firing · ${beyond}`;
 }
