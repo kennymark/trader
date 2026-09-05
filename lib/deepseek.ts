@@ -8,7 +8,7 @@ type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 
 export async function deepseekChat(
   messages: ChatMessage[],
-  opts?: { temperature?: number; maxTokens?: number },
+  opts?: { temperature?: number; maxTokens?: number; json?: boolean },
 ): Promise<string | null> {
   const apiKey = process.env.DEEPSEEK_API_KEY?.trim();
   if (!apiKey) return null;
@@ -24,6 +24,7 @@ export async function deepseekChat(
       messages,
       temperature: opts?.temperature ?? 0.35,
       max_tokens: opts?.maxTokens ?? 220,
+      ...(opts?.json ? { response_format: { type: "json_object" } } : {}),
     }),
   });
 

@@ -50,6 +50,70 @@ function fallbackAnalysis(
   };
 }
 
+/**
+ * Models occasionally return JSON that is truncated by the token cap, or that
+ * carries an unescaped quote inside a prose field. Try the strict slice first,
+ * then a repaired version that closes whatever is still open.
+ */
+export function parseLooseJson<T>(content: string): T | null {
+  const start = content.indexOf("{");
+  const body = start >= 0 ? content.slice(start) : content;
+  const end = body.lastIndexOf("}");
+
+  const candidates = [end >= 0 ? body.slice(0, end + 1) : body, repairTruncatedJson(body)];
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    try {
+      return JSON.parse(candidate) as T;
+    } catch {
+      // try the next candidate
+    }
+  }
+  return null;
+}
+
+function repairTruncatedJson(body: string): string | null {
+  const stack: string[] = [];
+  let inString = false;
+  let escaped = false;
+
+  for (const char of body) {
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (inString) {
+      if (char === "\\") escaped = true;
+      else if (char === '"') inString = false;
+      continue;
+    }
+    if (char === '"') inString = true;
+    else if (char === "{" || char === "[") stack.push(char);
+    else if (char === "}" || char === "]") stack.pop();
+  }
+
+  if (!inString && stack.length === 0) return null;
+
+  let repaired = body;
+  if (escaped) repaired = repaired.slice(0, -1);
+  if (inString) repaired += '"';
+  repaired = repaired.replace(/,\s*$/, "");
+  for (let i = stack.length - 1; i >= 0; i -= 1) {
+    repaired += stack[i] === "{" ? "}" : "]";
+  }
+  return repaired;
+}
+
+/** Last resort for hunt rationales: pull the pairs out of unparseable text. */
+export function salvageRationales(content: string): Array<{ symbol: string; rationale: string }> {
+  const pattern = /"symbol"\s*:\s*"([^"]+)"\s*,\s*"rationale"\s*:\s*"([\s\S]*?)"\s*[},]/g;
+  const items: Array<{ symbol: string; rationale: string }> = [];
+  for (const match of content.matchAll(pattern)) {
+    items.push({ symbol: match[1], rationale: match[2] });
+  }
+  return items;
+}
+
 export async function buildAiStockAnalysis(
   card: OpportunityCard,
   expectations: MarketExpectations,
@@ -86,52 +150,48 @@ export async function buildAiStockAnalysis(
         }),
       },
     ],
-    { temperature: 0.25, maxTokens: 700 },
+    { temperature: 0.25, maxTokens: 700, json: true },
   );
 
   if (!content) return fallback;
 
-  try {
-    const start = content.indexOf("{");
-    const end = content.lastIndexOf("}");
-    const parsed = JSON.parse(start >= 0 ? content.slice(start, end + 1) : content) as Partial<
-      AiStockAnalysis
-    >;
-    const allowed: AnalystVerdict[] = [
-      "strong_opportunity",
-      "attractive",
-      "neutral",
-      "weak",
-      "avoid",
-    ];
-    const verdict =
-      parsed.verdict && allowed.includes(parsed.verdict as AnalystVerdict)
-        ? (parsed.verdict as AnalystVerdict)
-        : fallback.verdict;
-
-    return {
-      bullCase: String(parsed.bullCase || fallback.bullCase).slice(0, 320),
-      bearCase: String(parsed.bearCase || fallback.bearCase).slice(0, 320),
-      whatMarketExpects: String(parsed.whatMarketExpects || fallback.whatMarketExpects).slice(
-        0,
-        320,
-      ),
-      catalysts: Array.isArray(parsed.catalysts)
-        ? parsed.catalysts.map(String).slice(0, 5)
-        : fallback.catalysts,
-      keyRisks: Array.isArray(parsed.keyRisks)
-        ? parsed.keyRisks.map(String).slice(0, 5)
-        : fallback.keyRisks,
-      verdict,
-      citedFacts: Array.isArray(parsed.citedFacts)
-        ? parsed.citedFacts.map(String).slice(0, 8)
-        : fallback.citedFacts,
-      aiGenerated: true,
-    };
-  } catch (err) {
-    console.error("Failed to parse DeepSeek analyst JSON", err);
+  const parsed = parseLooseJson<Partial<AiStockAnalysis>>(content);
+  if (!parsed) {
+    console.error("Failed to parse DeepSeek analyst JSON", content.slice(0, 400));
     return fallback;
   }
+
+  const allowed: AnalystVerdict[] = [
+    "strong_opportunity",
+    "attractive",
+    "neutral",
+    "weak",
+    "avoid",
+  ];
+  const verdict =
+    parsed.verdict && allowed.includes(parsed.verdict as AnalystVerdict)
+      ? (parsed.verdict as AnalystVerdict)
+      : fallback.verdict;
+
+  return {
+    bullCase: String(parsed.bullCase || fallback.bullCase).slice(0, 320),
+    bearCase: String(parsed.bearCase || fallback.bearCase).slice(0, 320),
+    whatMarketExpects: String(parsed.whatMarketExpects || fallback.whatMarketExpects).slice(
+      0,
+      320,
+    ),
+    catalysts: Array.isArray(parsed.catalysts)
+      ? parsed.catalysts.map(String).slice(0, 5)
+      : fallback.catalysts,
+    keyRisks: Array.isArray(parsed.keyRisks)
+      ? parsed.keyRisks.map(String).slice(0, 5)
+      : fallback.keyRisks,
+    verdict,
+    citedFacts: Array.isArray(parsed.citedFacts)
+      ? parsed.citedFacts.map(String).slice(0, 8)
+      : fallback.citedFacts,
+    aiGenerated: true,
+  };
 }
 
 export async function enrichHuntRationales(
@@ -169,24 +229,25 @@ export async function enrichHuntRationales(
         }),
       },
     ],
-    { temperature: 0.3, maxTokens: Math.min(1400, 90 * cards.length + 120) },
+    { temperature: 0.3, maxTokens: Math.min(2000, 110 * cards.length + 160), json: true },
   );
 
   const map = new Map<string, string>();
   if (content) {
-    try {
-      const start = content.indexOf("{");
-      const end = content.lastIndexOf("}");
-      const parsed = JSON.parse(start >= 0 ? content.slice(start, end + 1) : content) as {
-        items?: Array<{ symbol?: string; rationale?: string }>;
-      };
-      for (const item of parsed.items || []) {
-        if (item.symbol && item.rationale) {
-          map.set(item.symbol.toUpperCase(), item.rationale.trim());
-        }
+    const parsed = parseLooseJson<{ items?: Array<{ symbol?: string; rationale?: string }> }>(
+      content,
+    );
+    const items = parsed?.items ?? salvageRationales(content);
+    if (!parsed) {
+      console.error(
+        `Failed to parse DeepSeek hunt rationales; salvaged ${items.length}/${cards.length}`,
+        content.slice(0, 400),
+      );
+    }
+    for (const item of items) {
+      if (item.symbol && item.rationale) {
+        map.set(item.symbol.toUpperCase(), item.rationale.trim());
       }
-    } catch (err) {
-      console.error("Failed to parse DeepSeek hunt rationales", err);
     }
   }
 
