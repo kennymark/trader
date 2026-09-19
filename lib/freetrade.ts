@@ -219,6 +219,7 @@ export function computeHoldingsFromTrades(txs: ParsedFreetradeTx[]): ComputedHol
     displayName: string | null;
     isin: string | null;
     quantity: number;
+    quantityIsin: string | null;
     costBasis: number;
     currency: string;
   };
@@ -244,6 +245,7 @@ export function computeHoldingsFromTrades(txs: ParsedFreetradeTx[]): ComputedHol
         displayName: tx.title,
         isin: tx.isin,
         quantity: 0,
+        quantityIsin: null,
         costBasis: 0,
         currency,
       };
@@ -261,13 +263,26 @@ export function computeHoldingsFromTrades(txs: ParsedFreetradeTx[]): ComputedHol
             : 0;
       acc.costBasis += spend;
       acc.quantity += qty;
+      if (tx.isin) acc.quantityIsin = tx.isin.trim();
     } else if (tx.side === "sell") {
-      applyInferredSplit(acc, qty);
+      const disposalIsin = tx.isin?.trim() || null;
+      if (disposalIsin && acc.quantityIsin && disposalIsin !== acc.quantityIsin) {
+        const restated = restateAcrossReissue(acc.quantity, qty);
+        if (restated != null) acc.quantity = restated;
+        acc.quantityIsin = disposalIsin;
+      } else {
+        applyInferredSplit(acc, qty);
+      }
       if (acc.quantity <= 0) continue;
+      const heldBefore = acc.quantity;
       const sellQty = Math.min(qty, acc.quantity);
       const avg = acc.quantity > 0 ? acc.costBasis / acc.quantity : 0;
       acc.costBasis = Math.max(0, acc.costBasis - avg * sellQty);
       acc.quantity -= sellQty;
+      if (isDust(acc.quantity, heldBefore)) {
+        acc.quantity = 0;
+        acc.costBasis = 0;
+      }
     }
   }
 
@@ -283,6 +298,16 @@ export function computeHoldingsFromTrades(txs: ParsedFreetradeTx[]): ComputedHol
       currency: h.currency,
     }))
     .sort((a, b) => a.symbol.localeCompare(b.symbol));
+}
+
+/**
+ * Fractional shares make a fixed epsilon meaningless: 1e-7 of a share is dust
+ * against 400 shares and the entire position against 0.0000004. Restating a
+ * holding across a split leaves exactly that kind of residue, so what counts as
+ * sold out is measured against the size of the holding.
+ */
+function isDust(remaining: number, heldBefore: number): boolean {
+  return remaining <= Math.max(1e-8, Math.abs(heldBefore) * 1e-6);
 }
 
 /** Freetrade sometimes omits split rows; a sell that is a clean multiple of shares held is treated as a split. */
@@ -393,9 +418,78 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
-function groupKey(tx: ParsedFreetradeTx): string | null {
-  if (tx.isin && tx.isin.trim()) return tx.isin.trim();
+/**
+ * An ISIN is a 2-letter country code, a 9-character national number and a check
+ * digit. For US and Canadian lines that national number is a CUSIP, whose first
+ * six characters identify the issuer — so two ISINs sharing the first eight
+ * characters were issued by the same company.
+ */
+function issuerPrefix(isin: string): string {
+  return isin.trim().toUpperCase().slice(0, 8);
+}
+
+/**
+ * A corporate action can reissue a holding under a new ISIN while the ticker
+ * stays put: ContextLogic's 1-for-30 reverse split moved WISH from US21077C1071
+ * to US21077C3051. Keyed on ISIN alone those are two positions, so the buys sit
+ * open forever under the old line while the sale lands on the new one with no
+ * cost behind it — a loss shown as an open holding and a small gain.
+ *
+ * Two ISINs are the same position when the issuer AND the ticker both match.
+ * Requiring the ticker is what keeps share classes apart: GOOG (US02079K1079)
+ * and GOOGL (US02079K3059) share the issuer prefix and must not merge.
+ */
+function buildIsinMerges(txs: ParsedFreetradeTx[]): Map<string, string> {
+  const byIssuerTicker = new Map<string, Set<string>>();
+  for (const tx of txs) {
+    const isin = tx.isin?.trim();
+    const symbol = tx.symbol?.trim().toUpperCase();
+    if (!isin || !symbol) continue;
+    const k = `${issuerPrefix(isin)}:${symbol}`;
+    const set = byIssuerTicker.get(k) ?? new Set<string>();
+    set.add(isin);
+    byIssuerTicker.set(k, set);
+  }
+
+  const canonical = new Map<string, string>();
+  for (const isins of byIssuerTicker.values()) {
+    if (isins.size < 2) continue;
+    // Deterministic representative, so a re-import groups the same way.
+    const winner = [...isins].sort()[0]!;
+    for (const isin of isins) canonical.set(isin, winner);
+  }
+  return canonical;
+}
+
+function groupKey(tx: ParsedFreetradeTx, merges?: Map<string, string>): string | null {
+  if (tx.isin && tx.isin.trim()) {
+    const isin = tx.isin.trim();
+    return merges?.get(isin) ?? isin;
+  }
   if (tx.symbol) return tx.symbol;
+  return null;
+}
+
+/**
+ * Restate a share count across a corporate action.
+ *
+ * Only called when a disposal arrives under a different ISIN than the one the
+ * held quantity is denominated in, which is the signal that something happened
+ * to the line. Without that guard a partial sale — hold 100, sell 10 — is
+ * indistinguishable from a 1-for-10 reverse split.
+ */
+function restateAcrossReissue(held: number, disposedQty: number): number | null {
+  if (held <= 1e-8 || disposedQty <= 1e-8) return null;
+
+  if (held > disposedQty) {
+    const ratio = held / disposedQty; // reverse split: fewer, pricier shares
+    const nearest = Math.round(ratio);
+    if (nearest >= 2 && Math.abs(ratio - nearest) / nearest <= 0.03) return held / nearest;
+  } else {
+    const ratio = disposedQty / held; // forward split
+    const nearest = Math.round(ratio);
+    if (nearest >= 2 && Math.abs(ratio - nearest) / nearest <= 0.03) return held * nearest;
+  }
   return null;
 }
 
@@ -441,6 +535,8 @@ export function computePortfolioPerformance(
     displayName: string | null;
     isin: string | null;
     quantity: number;
+    /** The ISIN the held quantity is counted in, to spot a reissued line. */
+    quantityIsin: string | null;
     costBasis: number;
     currency: string;
     buyCount: number;
@@ -475,6 +571,8 @@ export function computePortfolioPerformance(
     return at - bt;
   });
 
+  const isinMerges = buildIsinMerges(txs);
+
   for (const tx of chronological) {
     if (tx.currency) currency = tx.currency;
     const kind = cashType(tx.type);
@@ -486,7 +584,7 @@ export function computePortfolioPerformance(
       continue;
     }
 
-    const key = groupKey(tx);
+    const key = groupKey(tx, isinMerges);
     if (!key) continue;
 
     let acc = map.get(key);
@@ -498,6 +596,7 @@ export function computePortfolioPerformance(
         displayName: tx.title,
         isin: tx.isin,
         quantity: 0,
+        quantityIsin: null,
         costBasis: 0,
         currency: tx.currency || currency,
         buyCount: 0,
@@ -571,6 +670,7 @@ export function computePortfolioPerformance(
             : 0;
       acc.costBasis += spend;
       acc.quantity += qty;
+      if (tx.isin) acc.quantityIsin = tx.isin.trim();
       acc.invested += spend;
       acc.buyCount += 1;
       acc.sharesBought += qty;
@@ -584,7 +684,24 @@ export function computePortfolioPerformance(
         note: null,
       });
     } else {
-      applyInferredSplit(acc, qty);
+      const disposalIsin = tx.isin?.trim() || null;
+      if (disposalIsin && acc.quantityIsin && disposalIsin !== acc.quantityIsin) {
+        const restated = restateAcrossReissue(acc.quantity, qty);
+        if (restated != null) {
+          acc.trades.push({
+            date: tx.tradedAt?.toISOString() ?? "",
+            type: "split",
+            quantity: null,
+            price: null,
+            total: null,
+            note: `${round2(acc.quantity)} → ${round2(restated)} shares on reissue`,
+          });
+          acc.quantity = restated;
+        }
+        acc.quantityIsin = disposalIsin;
+      } else {
+        applyInferredSplit(acc, qty);
+      }
       const proceeds =
         tx.totalAmount != null && tx.totalAmount > 0
           ? tx.totalAmount
@@ -608,6 +725,7 @@ export function computePortfolioPerformance(
         recordPnl(tx, proceeds);
         continue;
       }
+      const heldBefore = acc.quantity;
       const sellQty = Math.min(qty, acc.quantity);
       const avg = acc.costBasis / acc.quantity;
       const matchedProceeds = qty > 0 ? proceeds * (sellQty / qty) : 0;
@@ -616,7 +734,7 @@ export function computePortfolioPerformance(
       recordPnl(tx, realized);
       acc.costBasis = Math.max(0, acc.costBasis - avg * sellQty);
       acc.quantity -= sellQty;
-      if (acc.quantity <= 1e-8) {
+      if (isDust(acc.quantity, heldBefore)) {
         acc.quantity = 0;
         acc.costBasis = 0;
         acc.lastClosedAt = tx.tradedAt;

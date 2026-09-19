@@ -87,3 +87,60 @@ Amazon,ORDER,2025-08-20T12:00:00.000Z,GBP,300.00,SELL,AMZN,US0231351067,7.50,0.0
     expect(amzn?.realizedPnl).toBeCloseTo(200, 1);
   });
 });
+
+/**
+ * A real case from an activity export: ContextLogic's 1-for-30 reverse split
+ * moved WISH from US21077C1071 to US21077C3051. Keyed on ISIN alone the buys
+ * sat open forever under the old line while the sale landed on the new one
+ * with no cost behind it, so a 97% loss read as an open holding plus a gain.
+ */
+const REISSUE = `Title,Type,Timestamp,Account Currency,Total Amount,Buy / Sell,Ticker,ISIN,Price per Share in Account Currency,Stamp Duty,Quantity,Venue,Order ID,Order Type,Instrument Currency,Total Shares Amount,Price per Share,FX Rate,Base FX Rate,FX Fee (BPS),FX Fee Amount
+ContextLogic,ORDER,2021-06-22T10:00:00.000Z,GBP,499.25,BUY,WISH,US21077C1071,9.64,0.00,51.784914,Drivewealth,A1,MARKET,USD,,,,,,
+ContextLogic,ORDER,2021-08-24T10:00:00.000Z,GBP,2001.99,BUY,WISH,US21077C1071,5.85,0.00,341.641658,Drivewealth,A2,MARKET,USD,,,,,,
+ContextLogic,ORDER,2024-02-15T10:00:00.000Z,GBP,70.99,SELL,WISH,US21077C3051,5.41,0.00,13.114219,Drivewealth,A3,MARKET,USD,,,,,,
+`;
+
+describe("a line reissued under a new isin", () => {
+  it("is one position, not an open holding beside a costless sale", () => {
+    const txs = parseFreetradeCsv(REISSUE);
+    const perf = computePortfolioPerformance(txs);
+    const wish = perf.positions.filter((p) => p.symbol === "WISH");
+
+    expect(wish).toHaveLength(1);
+    expect(wish[0]!.status).toBe("closed");
+    expect(wish[0]!.quantityHeld).toBe(0);
+
+    // 393.426572 held / 13.114219 sold = exactly 30, so every share was sold.
+    expect(wish[0]!.invested).toBeCloseTo(2501.24, 2);
+    expect(wish[0]!.proceeds).toBeCloseTo(70.99, 2);
+    expect(wish[0]!.realizedPnl).toBeCloseTo(70.99 - 2501.24, 2);
+  });
+
+  it("leaves no phantom shares in holdings", () => {
+    const holdings = computeHoldingsFromTrades(parseFreetradeCsv(REISSUE));
+    expect(holdings.find((h) => h.symbol === "WISH")).toBeUndefined();
+  });
+
+  it("keeps share classes of one issuer apart", () => {
+    // GOOG and GOOGL share the issuer prefix US02079K and must not merge.
+    const csv = `Title,Type,Timestamp,Account Currency,Total Amount,Buy / Sell,Ticker,ISIN,Price per Share in Account Currency,Stamp Duty,Quantity,Venue,Order ID,Order Type,Instrument Currency,Total Shares Amount,Price per Share,FX Rate,Base FX Rate,FX Fee (BPS),FX Fee Amount
+Alphabet A,ORDER,2022-01-04T10:00:00.000Z,GBP,100.00,BUY,GOOGL,US02079K3059,100.00,0.00,1.000000,Drivewealth,B1,MARKET,USD,,,,,,
+Alphabet C,ORDER,2022-01-05T10:00:00.000Z,GBP,100.00,BUY,GOOG,US02079K1079,100.00,0.00,1.000000,Drivewealth,B2,MARKET,USD,,,,,,
+`;
+    const perf = computePortfolioPerformance(parseFreetradeCsv(csv));
+    const alphabet = perf.positions.filter((p) => p.symbol.startsWith("GOOG"));
+    expect(alphabet).toHaveLength(2);
+  });
+
+  it("does not mistake a partial sale for a reverse split", () => {
+    // Same ISIN throughout: selling a tenth of the holding is just a sale.
+    const csv = `Title,Type,Timestamp,Account Currency,Total Amount,Buy / Sell,Ticker,ISIN,Price per Share in Account Currency,Stamp Duty,Quantity,Venue,Order ID,Order Type,Instrument Currency,Total Shares Amount,Price per Share,FX Rate,Base FX Rate,FX Fee (BPS),FX Fee Amount
+Acme,ORDER,2022-01-04T10:00:00.000Z,GBP,1000.00,BUY,ACME,US1234567890,10.00,0.00,100.000000,Drivewealth,C1,MARKET,USD,,,,,,
+Acme,ORDER,2023-01-04T10:00:00.000Z,GBP,120.00,SELL,ACME,US1234567890,12.00,0.00,10.000000,Drivewealth,C2,MARKET,USD,,,,,,
+`;
+    const perf = computePortfolioPerformance(parseFreetradeCsv(csv));
+    const acme = perf.positions.find((p) => p.symbol === "ACME");
+    expect(acme?.status).toBe("open");
+    expect(acme?.quantityHeld).toBeCloseTo(90, 6);
+  });
+});
