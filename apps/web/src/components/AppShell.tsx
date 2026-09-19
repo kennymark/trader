@@ -3,6 +3,7 @@ import { authClient } from "../lib/auth";
 import { SymbolSearch } from "./SymbolSearch";
 import { NotificationBell } from "./NotificationBell";
 import { ChatDock } from "./ChatDock";
+import { CommandPalette } from "./CommandPalette";
 import { AUTH_ENABLED } from "../lib/features";
 
 type Props = {
@@ -94,6 +95,7 @@ export function AppShell({ user, children }: Props) {
       </div>
 
       <ChatDock />
+      <CommandPalette />
     </div>
   );
 }

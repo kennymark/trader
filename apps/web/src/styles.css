@@ -5487,3 +5487,178 @@ textarea:focus-visible {
   border-style: dashed;
 }
 
+/* ==========================================================================
+   The Command Sheet (⌘K)
+   --------------------------------------------------------------------------
+   One way into every surface and every stock. It obeys the sheet rules: the
+   2px ink stroke is the one enclosure the system permits, sections are opened
+   by a rule rather than closed by a box, and the active row is inked in.
+   ========================================================================== */
+
+.cmdk-root {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 12vh 1rem 1rem;
+}
+
+.cmdk-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: rgb(var(--surface) / 0.62);
+  cursor: default;
+}
+
+.cmdk-sheet {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: min(640px, 100%);
+  max-height: 70vh;
+  background: var(--bg);
+  border: 2px solid var(--ink);
+  border-radius: 0;
+}
+
+.cmdk-input {
+  width: 100%;
+  flex-shrink: 0;
+  background: var(--bg);
+  color: var(--ink);
+  border: 0;
+  border-bottom: 2px solid var(--ink);
+  border-radius: 0;
+  padding: 0.75rem 0.9rem;
+  font-family: var(--font);
+  font-size: 1rem;
+}
+
+.cmdk-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* The field is focused for the whole life of the sheet, so the standard focus
+   outline would draw a permanent ring around it and say nothing. */
+.cmdk-input:focus-visible {
+  outline: none;
+  background: var(--bg);
+  color: var(--ink);
+  border-color: var(--ink);
+  box-shadow: none;
+}
+
+.cmdk-results {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+}
+
+.cmdk-group {
+  margin: 0;
+  padding: 0.85rem 0.9rem 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.cmdk-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  background: transparent;
+  color: var(--ink);
+  border: 0;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  padding: 0.5rem 0.9rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* The Inked-In Rule: selection is a change in value, not in hue. */
+.cmdk-row[data-active="true"] {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.cmdk-row:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: -2px;
+}
+
+.cmdk-row-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.cmdk-row-hint {
+  min-width: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cmdk-row[data-active="true"] .cmdk-row-hint {
+  color: var(--bg);
+  opacity: 0.75;
+}
+
+.cmdk-empty {
+  margin: 0;
+  padding: 1rem 0.9rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.cmdk-foot {
+  display: flex;
+  gap: 1.1rem;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0.5rem 0.9rem;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+@media (max-width: 640px) {
+  .cmdk-root {
+    padding: 6vh 0.5rem 0.5rem;
+  }
+
+  .cmdk-foot {
+    display: none;
+  }
+}
+
+/* The one mark that says the command sheet exists. Reference grey, no key cap:
+   a drawn key would be a box, and this world has none. */
+.navsearch-kbd {
+  position: absolute;
+  right: 0.1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+@media (max-width: 640px) {
+  .navsearch-kbd {
+    display: none;
+  }
+}
+

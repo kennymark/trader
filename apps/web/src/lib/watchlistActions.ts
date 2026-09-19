@@ -34,6 +34,8 @@ export function useWatchlist() {
 
   return {
     ready: watchlist.isFetched,
+    /** The list itself, for surfaces that offer the stocks as choices. */
+    items: watchlist.data ?? [],
     isWatching: (symbol: string) => symbols.has(symbol.trim().toUpperCase()),
     add,
   };

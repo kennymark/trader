@@ -130,6 +130,9 @@ export function SymbolSearch() {
           autoComplete="off"
           disabled={AUTH_ENABLED && sessionPending}
         />
+        {/* The palette does everything this field does and more, but nothing
+            on screen would otherwise say it exists. */}
+        {!symbol && <span className="navsearch-kbd" aria-hidden="true">⌘K</span>}
         {showSuggestions && (
           <ul className="symbol-suggestions" id={listboxId} role="listbox">
             {suggestions.isFetching && results.length === 0 && (
