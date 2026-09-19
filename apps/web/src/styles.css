@@ -616,8 +616,10 @@ button.symbol-suggestion.active {
   flex-direction: column;
   width: min(440px, 100%);
   height: 100%;
-  background:
-    linear-gradient(180deg, rgba(20, 32, 26, 0.98), rgb(var(--surface) / 0.98));
+  /* Opaque, and the same paper as the page: see the note at .drawer-panel
+     below, which restates this. A translucent panel reads as a rendering
+     fault, because the page slides visibly underneath it. */
+  background: var(--bg);
   border-left: 1px solid var(--border);
   box-shadow: -18px 0 50px rgba(0, 0, 0, 0.45);
   outline: none;
@@ -628,14 +630,20 @@ button.symbol-suggestion.active {
   width: min(560px, 100%);
 }
 
+/* Movement only. Fading the panel in makes the page show through it, and the
+   panel is the same colour as the page, so the result looks like a bug. */
 @keyframes drawer-in {
   from {
     transform: translateX(12px);
-    opacity: 0.85;
   }
   to {
     transform: translateX(0);
-    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer-panel {
+    animation: none;
   }
 }
 
@@ -5478,3 +5486,4 @@ textarea:focus-visible {
   color: var(--text-muted);
   border-style: dashed;
 }
+
