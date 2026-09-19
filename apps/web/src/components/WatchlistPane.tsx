@@ -7,6 +7,7 @@ import { AUTH_ENABLED } from "../lib/features";
 import { getGuestWatchlist, removeGuestSymbol } from "../lib/guestWatchlist";
 import { fetchQuotes, fetchWatchlist, removeWatchlist } from "../lib/queries";
 import { useConfirm } from "./ConfirmProvider";
+import { StockLogo } from "./StockLogo";
 import { usePreferences } from "../lib/preferences";
 
 type Props = {
@@ -178,7 +179,8 @@ function StockRow({
   return (
     <div className={`stock-row ${active ? "active" : ""}`}>
       <button type="button" className="stock-item" onClick={onSelect}>
-        <div>
+        <StockLogo symbol={item.symbol} />
+        <div className="stock-identity">
           <div className="stock-symbol">{item.symbol}</div>
           <div className="stock-name">{item.displayName || quote?.shortName || "—"}</div>
         </div>

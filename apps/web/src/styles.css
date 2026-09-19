@@ -5662,3 +5662,70 @@ textarea:focus-visible {
   }
 }
 
+/* ==========================================================================
+   Company marks
+   --------------------------------------------------------------------------
+   An amendment to the world: the statement admits the companies' own logos, in
+   their own colours, on the two lists you scan by name. Everything around them
+   holds the line — the tile is square, unlit, and sits on the same paper.
+   The monogram underneath is what shows whenever a logo is missing, which for
+   a UK portfolio is often, so the two must occupy exactly the same box.
+   ========================================================================== */
+
+.stock-logo {
+  position: relative;
+  flex-shrink: 0;
+  display: inline-grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--bg-elevated);
+  border-radius: 0;
+}
+
+.stock-logo-list {
+  width: 2rem;
+  height: 2rem;
+}
+
+.stock-logo-table {
+  width: 1.6rem;
+  height: 1.6rem;
+}
+
+.stock-logo-mono {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.stock-logo-table .stock-logo-mono {
+  font-size: 0.62rem;
+}
+
+/* Painted over the monogram, filling the tile. Sits in the same grid cell so
+   there is no reflow when it arrives. */
+.stock-logo-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: var(--bg-elevated);
+}
+
+/* The watchlist row now leads with the mark, so the name block has to be the
+   part that shrinks. */
+.stock-identity {
+  min-width: 0;
+  flex: 1;
+}
+
+.pnl-stock-cell {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  min-width: 0;
+}
+

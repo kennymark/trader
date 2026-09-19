@@ -25,6 +25,7 @@ import { formatDate, formatDateTime } from "../lib/dates";
 import { CacheNotice } from "../components/CacheNotice";
 import { useConfirm } from "../components/ConfirmProvider";
 import { ContextMenu } from "../components/ContextMenu";
+import { StockLogo } from "../components/StockLogo";
 import { useWatchlist } from "../lib/watchlistActions";
 import { WhatIfPanel } from "../components/WhatIfPanel";
 
@@ -574,15 +575,20 @@ function PortfolioBody({
                   onContextMenu={(e) => openMenu(e, p)}
                 >
                   <td>
-                    <div className="intel-symbol">{p.symbol}</div>
-                    <div className="muted">
-                      {p.displayName || "—"}
-                      {p.aliases.length ? ` · was ${p.aliases.join(", ")}` : ""}
-                    </div>
-                    <div className="muted">
-                      {p.buyCount} buy{p.buyCount === 1 ? "" : "s"}
-                      {p.sellCount ? ` · ${p.sellCount} sell${p.sellCount === 1 ? "" : "s"}` : ""}
-                      {p.holdDays != null ? ` · ${p.holdDays}d` : ""}
+                    <div className="pnl-stock-cell">
+                      <StockLogo symbol={p.symbol} size="table" />
+                      <div>
+                        <div className="intel-symbol">{p.symbol}</div>
+                        <div className="muted">
+                          {p.displayName || "—"}
+                          {p.aliases.length ? ` · was ${p.aliases.join(", ")}` : ""}
+                        </div>
+                        <div className="muted">
+                          {p.buyCount} buy{p.buyCount === 1 ? "" : "s"}
+                          {p.sellCount ? ` · ${p.sellCount} sell${p.sellCount === 1 ? "" : "s"}` : ""}
+                          {p.holdDays != null ? ` · ${p.holdDays}d` : ""}
+                        </div>
+                      </div>
                     </div>
                   </td>
                   <td>
