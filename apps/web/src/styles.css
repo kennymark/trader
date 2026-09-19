@@ -5729,3 +5729,80 @@ textarea:focus-visible {
   min-width: 0;
 }
 
+/* ==========================================================================
+   Blocking progress
+   --------------------------------------------------------------------------
+   The whole sheet, not a box on top of one: an import replaces the account, so
+   for its duration there is nothing else to look at. No percentage is shown
+   because none is known — see BlockingProgress.tsx.
+   ========================================================================== */
+
+.blocking-progress {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.35rem;
+  background: var(--bg);
+}
+
+.blocking-progress-sheet {
+  width: min(560px, 100%);
+}
+
+.blocking-progress-kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.blocking-progress-phase {
+  margin: 0 0 1.1rem;
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  font-weight: 900;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+}
+
+/* A rule, because a rule is this system's unit of structure. The segment runs
+   to show the work is alive; it does not encode how far along it is. */
+.blocking-progress-rule {
+  position: relative;
+  height: 2px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.blocking-progress-run {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 38%;
+  background: var(--ink);
+  animation: blocking-progress-run 1.3s ease-in-out infinite;
+}
+
+@keyframes blocking-progress-run {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+
+.blocking-progress-note {
+  margin: 1.1rem 0 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* Without motion the rule would read as a stalled bar, so state it in ink. */
+@media (prefers-reduced-motion: reduce) {
+  .blocking-progress-run {
+    animation: none;
+    width: 100%;
+  }
+}

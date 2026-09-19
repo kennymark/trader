@@ -10,6 +10,7 @@ import {
   importFreetradeCsv,
   disconnectFreetrade,
 } from "../lib/queries";
+import { BlockingProgress } from "../components/BlockingProgress";
 import { DeliveryDestinations } from "../components/DeliveryDestinations";
 import { RuleForm } from "../components/RuleForm";
 import { useConfirm } from "../components/ConfirmProvider";
@@ -159,6 +160,8 @@ function FreetradeSection() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [syncWatchlist, setSyncWatchlist] = useState(true);
   const [localError, setLocalError] = useState<string | null>(null);
+  /** What the import is doing right now, for the blocking sheet. */
+  const [phase, setPhase] = useState<string | null>(null);
 
   const freetrade = useQuery({
     queryKey: ["freetrade"],
@@ -167,9 +170,15 @@ function FreetradeSection() {
 
   const importMut = useMutation({
     mutationFn: async (file: File) => {
+      setPhase("Reading the file");
       const csv = await file.text();
+      // A line count is not the row count — a quoted field can span lines — so
+      // it is offered as an approximation or not at all.
+      const lines = csv.split("\n").filter((l) => l.trim()).length - 1;
+      setPhase(lines > 0 ? `Rebuilding from about ${lines.toLocaleString()} rows` : "Rebuilding your portfolio");
       return importFreetradeCsv(csv, syncWatchlist);
     },
+    onSettled: () => setPhase(null),
     onSuccess: () => {
       setLocalError(null);
       qc.invalidateQueries({ queryKey: ["freetrade"] });
@@ -195,6 +204,14 @@ function FreetradeSection() {
 
   return (
     <div>
+      {importMut.isPending && phase && (
+        <BlockingProgress
+          kicker="Importing"
+          phase={phase}
+          note="Your previous import is already cleared, so leaving this page now would leave the account half rebuilt. It takes a few seconds."
+        />
+      )}
+
       <h3 className="settings-sub">Freetrade</h3>
       <p className="muted" style={{ marginBottom: "0.85rem" }}>
         Freetrade has no public API. Export Activity CSV from the Freetrade app
