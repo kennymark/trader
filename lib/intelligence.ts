@@ -26,11 +26,13 @@ import {
 } from "./yahoo";
 import { buildAiStockAnalysis, enrichHuntRationales } from "./intelligence/aiAnalyst";
 import { buildMarketExpectations } from "./intelligence/expectations";
+import { classifyHeadlines } from "./newsClassifier";
 import {
   detectHappening,
   returnOverBars,
   volumeSpikeRatio,
 } from "./intelligence/happening";
+import { applyHeadlineVerdicts, headlinesIn } from "./intelligence/headlines";
 import { findHistoricalPatterns } from "./intelligence/patterns";
 import { buildPortfolioHealth } from "./intelligence/portfolio";
 import {
@@ -550,6 +552,14 @@ export async function buildIntelligence(
   }
 
   cards.sort((a, b) => b.opportunityScore - a.opportunityScore);
+
+  // One call for every headline on the board. Per symbol there are only a
+  // handful, which is not worth a round trip; across the watchlist it is.
+  const verdicts = await classifyHeadlines(cards.flatMap((c) => headlinesIn(c.happening)));
+  for (const card of cards) {
+    card.happening = applyHeadlineVerdicts(card.happening, verdicts);
+  }
+
   const enriched = await enrichHuntRationales(cards, aiRationales);
 
   let priorScores: Map<string, number> | undefined;
@@ -667,6 +677,10 @@ export async function buildSymbolIntelligence(
 
   const bundle = await loadBundle(key);
   const opportunity = buildOpportunityCard(key, bundle);
+  opportunity.happening = applyHeadlineVerdicts(
+    opportunity.happening,
+    await classifyHeadlines(headlinesIn(opportunity.happening)),
+  );
   const [withRationale] = await enrichHuntRationales([opportunity]);
   const card = withRationale || opportunity;
 
