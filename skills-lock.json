@@ -1,6 +1,13 @@
 {
   "version": 1,
   "skills": {
+    "bulk-classify": {
+      "source": "classifier.dev",
+      "sourceUrl": "https://classifier.dev",
+      "sourceType": "well-known",
+      "computedHash": "91b9f5ece879c35d85a7c7d542488036c0e2c65ee0eb592658a202c6a3929b83",
+      "wellKnownDigest": "sha256:da163ad89ddc5e66fe1cbccceda50f4e9b3355ced35432921102ee4826c83369"
+    },
     "convex": {
       "source": "get-convex/agent-skills",
       "sourceType": "github",
