@@ -84,13 +84,17 @@ npx convex env set BETTER_AUTH_SECRET "$(openssl rand -hex 32)"
 
 | Convex variable | Purpose |
 |-----------------|---------|
-| `SITE_URL` | Origin the app is served from; Better Auth trusts it |
+| `SITE_URL` | Origin the app is served from; Better Auth trusts it, and password reset links point at it |
 | `BETTER_AUTH_SECRET` | Session secret |
-| `RESEND_API_KEY` / `EMAIL_FROM` | Email alerts (dry-runs if unset) |
+| `RESEND_API_KEY` / `EMAIL_FROM` | Email alerts and password resets (dry-runs if unset) |
 | `TELEGRAM_BOT_TOKEN` / `TELEGRAM_BOT_USERNAME` | Telegram bot |
 | `TELEGRAM_WEBHOOK_SECRET` | Optional webhook header check |
 | `TWIST_ACCESS_TOKEN` | Optional Twist token |
 | `DEEPSEEK_API_KEY` | Optional AI rationales on The Hunt |
+
+With no email transport configured, nothing is delivered — sends are logged
+instead, so in dev the password reset link shows up in the `npx convex dev`
+output rather than an inbox.
 
 ### 3. Run
 

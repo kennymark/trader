@@ -25,6 +25,7 @@ import { HomePage } from "./pages/HomePage";
 import { PortfolioPage } from "./pages/PortfolioPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { LoginPage } from "./pages/LoginPage";
+import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -190,6 +191,24 @@ const loginRoute = createRoute({
   },
 });
 
+// Root-level like /login: the emailed link has to work without a session, and
+// without the app shell around it.
+const resetPasswordRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/reset-password",
+  validateSearch: (search: Record<string, unknown>) => ({
+    token: typeof search.token === "string" ? search.token : undefined,
+  }),
+  component: function ResetPasswordRoute() {
+    if (!AUTH_ENABLED) {
+      window.location.href = "/";
+      return null;
+    }
+    const { token } = resetPasswordRoute.useSearch();
+    return <ResetPasswordPage token={token} />;
+  },
+});
+
 const appRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: "app",
@@ -237,6 +256,7 @@ const portfolioRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   loginRoute,
+  resetPasswordRoute,
   appRoute.addChildren([
     indexRoute,
     calendarRoute,

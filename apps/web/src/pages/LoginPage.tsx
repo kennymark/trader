@@ -6,19 +6,39 @@ type Props = {
   next?: string;
 };
 
+type Mode = "signin" | "signup" | "forgot";
+
 export function LoginPage({ next = "/" }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<Mode>("signin");
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  function switchMode(to: Mode) {
+    setMode(to);
+    setError(null);
+    setNotice(null);
+  }
 
   async function submitEmail(e: React.FormEvent) {
     e.preventDefault();
     setPending(true);
     setError(null);
+    setNotice(null);
     try {
+      if (mode === "forgot") {
+        const res = await authClient.requestPasswordReset({ email });
+        if (res.error) throw new Error(res.error.message || "Could not send the reset email");
+        // Deliberately the same message whether or not the account exists, so
+        // the form cannot be used to find out who has signed up.
+        setNotice(
+          "If that email has an account, a reset link is on its way. The link expires in an hour.",
+        );
+        return;
+      }
       if (mode === "signup") {
         const res = await authClient.signUp.email({ email, password, name: name || email });
         if (res.error) throw new Error(res.error.message || "Sign up failed");
@@ -42,8 +62,9 @@ export function LoginPage({ next = "/" }: Props) {
           Trader
         </div>
         <p>
-          Sign in to save your watchlist, set price alerts, and connect email, Telegram, or
-          Twist.
+          {mode === "forgot"
+            ? "Enter the email you signed up with and we'll send a link to set a new password."
+            : "Sign in to save your watchlist, set price alerts, and connect email, Telegram, or Twist."}
         </p>
 
         <form onSubmit={submitEmail}>
@@ -62,35 +83,55 @@ export function LoginPage({ next = "/" }: Props) {
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
-          <div className="field" style={{ marginBottom: "1rem" }}>
-            <label>Password</label>
-            <input
-              type="password"
-              required
-              minLength={8}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
+          {mode !== "forgot" && (
+            <div className="field" style={{ marginBottom: "1rem" }}>
+              <label>Password</label>
+              <input
+                type="password"
+                required
+                minLength={8}
+                autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+          )}
           <button type="submit" className="btn btn-primary" disabled={pending}>
-            {mode === "signup" ? "Create account" : "Sign in"}
+            {mode === "signup"
+              ? "Create account"
+              : mode === "forgot"
+                ? "Send reset link"
+                : "Sign in"}
           </button>
         </form>
 
         {error && <div className="error-banner" style={{ marginTop: "1rem" }}>{error}</div>}
+        {notice && (
+          <p className="muted" style={{ marginTop: "1rem", marginBottom: 0 }} role="status">
+            {notice}
+          </p>
+        )}
+
+        {mode === "signin" && (
+          <p className="muted" style={{ marginTop: "1rem", marginBottom: 0 }}>
+            <button type="button" className="btn btn-ghost" onClick={() => switchMode("forgot")}>
+              Forgot password?
+            </button>
+          </p>
+        )}
 
         <p className="muted" style={{ marginTop: "1rem", marginBottom: 0 }}>
           {mode === "signin" ? (
             <>
               No account?{" "}
-              <button type="button" className="btn btn-ghost" onClick={() => setMode("signup")}>
+              <button type="button" className="btn btn-ghost" onClick={() => switchMode("signup")}>
                 Sign up
               </button>
             </>
           ) : (
             <>
-              Have an account?{" "}
-              <button type="button" className="btn btn-ghost" onClick={() => setMode("signin")}>
+              {mode === "forgot" ? "Remembered it?" : "Have an account?"}{" "}
+              <button type="button" className="btn btn-ghost" onClick={() => switchMode("signin")}>
                 Sign in
               </button>
             </>

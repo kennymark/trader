@@ -1,7 +1,7 @@
 import { createClient, type GenericCtx } from "@convex-dev/better-auth";
 import { convex, crossDomain } from "@convex-dev/better-auth/plugins";
 import { betterAuth } from "better-auth/minimal";
-import { components } from "./_generated/api";
+import { components, internal } from "./_generated/api";
 import type { DataModel } from "./_generated/dataModel";
 import { query } from "./_generated/server";
 import authConfig from "./auth.config";
@@ -32,6 +32,9 @@ const trustedOrigins = [
   ]),
 ];
 
+/** How long a password reset link stays usable. */
+const RESET_PASSWORD_TTL_SECONDS = 60 * 60;
+
 export const authComponent = createClient<DataModel>(components.betterAuth);
 
 export const createAuth = (ctx: GenericCtx<DataModel>) =>
@@ -42,6 +45,28 @@ export const createAuth = (ctx: GenericCtx<DataModel>) =>
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: false,
+      resetPasswordTokenExpiresIn: RESET_PASSWORD_TTL_SECONDS,
+      // A reset is the remedy for a password someone else may know, so the
+      // sessions opened with the old one should not survive it.
+      revokeSessionsOnPasswordReset: true,
+      /**
+       * Better Auth's own `url` points at the `.convex.site` callback, which
+       * then redirects to the SPA. Linking straight to the SPA with the token
+       * skips that hop, and keeps the email pointing at the app's own origin.
+       * The email itself goes out from a Node action (see convex/authEmails.ts).
+       */
+      sendResetPassword: async ({ user, token }) => {
+        const url = `${siteUrl}/reset-password?token=${encodeURIComponent(token)}`;
+        if (!("scheduler" in ctx)) {
+          throw new Error("Cannot send a password reset email from this context");
+        }
+        await ctx.scheduler.runAfter(0, internal.authEmails.sendPasswordReset, {
+          to: user.email,
+          name: user.name,
+          url,
+          expiresInMinutes: Math.round(RESET_PASSWORD_TTL_SECONDS / 60),
+        });
+      },
     },
     plugins: [crossDomain({ siteUrl }), convex({ authConfig })],
   });

@@ -11,6 +11,7 @@
 import type * as alertCycle from "../alertCycle.js";
 import type * as alerts from "../alerts.js";
 import type * as auth from "../auth.js";
+import type * as authEmails from "../authEmails.js";
 import type * as channels from "../channels.js";
 import type * as chat from "../chat.js";
 import type * as chatActions from "../chatActions.js";
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   alertCycle: typeof alertCycle;
   alerts: typeof alerts;
   auth: typeof auth;
+  authEmails: typeof authEmails;
   channels: typeof channels;
   chat: typeof chat;
   chatActions: typeof chatActions;
