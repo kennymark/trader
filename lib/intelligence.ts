@@ -681,12 +681,10 @@ export async function buildSymbolIntelligence(
     opportunity.happening,
     await classifyHeadlines(headlinesIn(opportunity.happening)),
   );
-  const [withRationale] = await enrichHuntRationales([opportunity]);
-  const card = withRationale || opportunity;
 
   const expectations = buildMarketExpectations({
-    price: card.price,
-    targetPrice: card.targetPrice,
+    price: opportunity.price,
+    targetPrice: opportunity.targetPrice,
     trailingPe: bundle.fundamentals.trailingPe,
     forwardPe: bundle.fundamentals.forwardPe,
     revenueGrowth: bundle.analyst.revenueGrowth,
@@ -695,6 +693,18 @@ export async function buildSymbolIntelligence(
     valuationLabel: bundle.insights.valuation,
     analystKey: bundle.analyst.recommendationKey,
   });
+
+  /**
+   * Two model calls, and neither needs the other: the rationale is one line
+   * for the hunt list, the analysis is the bull/bear read, and nothing in the
+   * analysis prompt looks at the rationale. Run sequentially they cost the sum
+   * of two round trips for no reason.
+   */
+  const [[withRationale], aiAnalysis] = await Promise.all([
+    enrichHuntRationales([opportunity]),
+    buildAiStockAnalysis(opportunity, expectations),
+  ]);
+  const card = withRationale || opportunity;
 
   const baseAssumptions = {
     ...defaultAssumptionsFromFundamentals({
@@ -717,7 +727,7 @@ export async function buildSymbolIntelligence(
 
   const patterns = findHistoricalPatterns(bundle.bars);
   const catalysts = toCatalystEvents(key, card.displayName, bundle.calendar);
-  const aiAnalysis = await buildAiStockAnalysis(card, expectations);
+
 
   const detail: SymbolIntelligenceDetail = {
     opportunity: card,
