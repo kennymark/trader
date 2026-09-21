@@ -18,7 +18,7 @@ function verdictFromScores(card: OpportunityCard): AnalystVerdict {
   return "neutral";
 }
 
-function fallbackAnalysis(
+export function fallbackAnalysis(
   card: OpportunityCard,
   expectations: MarketExpectations,
 ): AiStockAnalysis {

@@ -1,4 +1,5 @@
 import type {
+  AiStockAnalysis,
   AlertEvent,
   AlertRule,
   AnalyticsResult,
@@ -138,6 +139,12 @@ export const fetchSymbolIntelligence = (symbol: string) =>
   convex.action(api.intelligenceActions.forSymbol, {
     symbol,
   }) as Promise<SymbolIntelligenceDetail>;
+
+/** The model's read, fetched alongside the numbers rather than ahead of them. */
+export const fetchSymbolAnalysis = (symbol: string) =>
+  convex.action(api.intelligenceActions.analysisForSymbol, {
+    symbol,
+  }) as Promise<AiStockAnalysis>;
 
 export const fetchPortfolioHealth = () =>
   convex.action(api.intelligenceActions.portfolioHealth, {}) as Promise<PortfolioHealth>;

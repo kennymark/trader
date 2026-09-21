@@ -54,11 +54,28 @@ const INSTRUCTIONS =
  * Returns a verdict per headline, keyed by the headline text. Headlines the
  * service could not answer for are simply absent from the map.
  */
+/**
+ * A headline's category does not change, and the same ones are asked about
+ * repeatedly: the detail page requests its numbers and its analysis
+ * separately, and both classify the same list. Remembering the answers keeps
+ * that to one call.
+ */
+const VERDICTS = new Map<string, { at: number; verdict: HeadlineVerdict }>();
+const VERDICT_TTL_MS = 60 * 60_000;
+
 export async function classifyHeadlines(
   headlines: string[],
 ): Promise<Map<string, HeadlineVerdict>> {
   const out = new Map<string, HeadlineVerdict>();
-  const unique = [...new Set(headlines.map((h) => h.trim()).filter(Boolean))];
+  const all = [...new Set(headlines.map((h) => h.trim()).filter(Boolean))];
+
+  const now = Date.now();
+  const unique: string[] = [];
+  for (const headline of all) {
+    const hit = VERDICTS.get(headline);
+    if (hit && now - hit.at < VERDICT_TTL_MS) out.set(headline, hit.verdict);
+    else unique.push(headline);
+  }
   if (!unique.length || !enabled()) return out;
 
   for (let i = 0; i < unique.length; i += MAX_BATCH) {
@@ -95,7 +112,9 @@ export async function classifyHeadlines(
         const confidence = r?.confidence;
         if (!label || typeof confidence !== "number") return;
         if (!HEADLINE_LABELS.includes(label)) return;
-        out.set(headline, { label, confidence });
+        const verdict = { label, confidence };
+        VERDICTS.set(headline, { at: Date.now(), verdict });
+        out.set(headline, verdict);
       });
     } catch (err) {
       // Timeout, offline, rate limit: the feed is still correct without this.

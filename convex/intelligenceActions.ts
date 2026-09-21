@@ -7,6 +7,7 @@ import { requireUserId } from "./users";
 import type { Id } from "./_generated/dataModel";
 import {
   buildIntelligence,
+  buildSymbolAnalysis,
   buildSymbolIntelligence,
   runScenarioSimulator,
 } from "../lib/intelligence";
@@ -90,11 +91,26 @@ export const hunt = action({
   },
 });
 
+/**
+ * The page's first request: every number, with the rule-based analysis so the
+ * card is never empty. The model's read follows in `analysisForSymbol`.
+ */
 export const forSymbol = action({
   args: { symbol: v.string() },
   handler: async (ctx, { symbol }) => {
     await requireUserId(ctx);
-    return await buildSymbolIntelligence(symbol.trim().toUpperCase());
+    return await buildSymbolIntelligence(symbol.trim().toUpperCase(), undefined, {
+      ai: false,
+    });
+  },
+});
+
+/** The second request, issued alongside the first and swapped in on arrival. */
+export const analysisForSymbol = action({
+  args: { symbol: v.string() },
+  handler: async (ctx, { symbol }) => {
+    await requireUserId(ctx);
+    return await buildSymbolAnalysis(symbol.trim().toUpperCase());
   },
 });
 

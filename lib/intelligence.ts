@@ -1,4 +1,5 @@
 import type {
+  AiStockAnalysis,
   CatalystEvent,
   FeedItem,
   IntelligenceRecommendation,
@@ -24,7 +25,11 @@ import {
   type SymbolFundamentals,
   type SymbolInsights,
 } from "./yahoo";
-import { buildAiStockAnalysis, enrichHuntRationales } from "./intelligence/aiAnalyst";
+import {
+  buildAiStockAnalysis,
+  enrichHuntRationales,
+  fallbackAnalysis,
+} from "./intelligence/aiAnalyst";
 import { buildMarketExpectations } from "./intelligence/expectations";
 import { classifyHeadlines } from "./newsClassifier";
 import {
@@ -49,6 +54,8 @@ import { computeOpportunityScores } from "./intelligence/scoring";
 const BATCH_CACHE = new Map<string, { at: number; data: IntelligenceResponse }>();
 const BATCH_TTL_MS = 10 * 60_000;
 const DETAIL_CACHE = new Map<string, { at: number; data: SymbolIntelligenceDetail }>();
+/** The same detail without the model's read, which the page renders first. */
+const CORE_CACHE = new Map<string, { at: number; data: SymbolIntelligenceDetail }>();
 const DETAIL_TTL_MS = 10 * 60_000;
 const MAX_SYMBOLS = 20;
 
@@ -250,7 +257,35 @@ type SymbolBundle = {
   volSpike: number | null;
 };
 
+const BUNDLE_CACHE = new Map<string, { at: number; data: SymbolBundle }>();
+const BUNDLE_TTL_MS = 5 * 60_000;
+/**
+ * The detail page now asks for its numbers and its analysis in two calls, and
+ * both need the same Yahoo data. Without sharing the in-flight promise the two
+ * requests race and fetch everything twice.
+ */
+const BUNDLE_INFLIGHT = new Map<string, Promise<SymbolBundle>>();
+
 async function loadBundle(symbol: string): Promise<SymbolBundle> {
+  const cacheKey = symbol.toUpperCase();
+  const cached = BUNDLE_CACHE.get(cacheKey);
+  if (cached && Date.now() - cached.at < BUNDLE_TTL_MS) return cached.data;
+
+  const inflight = BUNDLE_INFLIGHT.get(cacheKey);
+  if (inflight) return inflight;
+
+  const promise = fetchBundle(cacheKey)
+    .then((data) => {
+      BUNDLE_CACHE.set(cacheKey, { at: Date.now(), data });
+      return data;
+    })
+    .finally(() => BUNDLE_INFLIGHT.delete(cacheKey));
+
+  BUNDLE_INFLIGHT.set(cacheKey, promise);
+  return promise;
+}
+
+async function fetchBundle(symbol: string): Promise<SymbolBundle> {
   const key = symbol.toUpperCase();
   const [quotes, bars, insights, analyst, fundamentals, calendar] = await Promise.all([
     getQuotes([key]),
@@ -665,13 +700,55 @@ export async function buildIntelligence(
   return data;
 }
 
+/**
+ * Just the model's read of a stock, for the second request the detail page
+ * makes. It reuses the cached bundle the first request warmed, so the cost
+ * here is the model call and nothing else.
+ */
+export async function buildSymbolAnalysis(symbol: string): Promise<AiStockAnalysis> {
+  const key = symbol.toUpperCase();
+  const bundle = await loadBundle(key);
+  const opportunity = buildOpportunityCard(key, bundle);
+  opportunity.happening = applyHeadlineVerdicts(
+    opportunity.happening,
+    await classifyHeadlines(headlinesIn(opportunity.happening)),
+  );
+  const expectations = buildMarketExpectations({
+    price: opportunity.price,
+    targetPrice: opportunity.targetPrice,
+    trailingPe: bundle.fundamentals.trailingPe,
+    forwardPe: bundle.fundamentals.forwardPe,
+    revenueGrowth: bundle.analyst.revenueGrowth,
+    earningsGrowth: bundle.analyst.earningsGrowth,
+    profitMargins: bundle.fundamentals.profitMargins,
+    valuationLabel: bundle.insights.valuation,
+    analystKey: bundle.analyst.recommendationKey,
+  });
+  return buildAiStockAnalysis(opportunity, expectations);
+}
+
 export async function buildSymbolIntelligence(
   symbol: string,
   assumptions?: Partial<ScenarioAssumptions>,
+  opts?: {
+    /**
+     * False returns the rule-based analysis instead of waiting on the model.
+     * Everything on this page except the bull/bear prose is arithmetic over
+     * data already in hand, and the numbers are the content — they should not
+     * queue behind a language model. The page asks for the model's read
+     * separately and swaps it in.
+     */
+    ai?: boolean;
+  },
 ): Promise<SymbolIntelligenceDetail> {
   const key = symbol.toUpperCase();
-  if (!assumptions) {
+  const withAi = opts?.ai !== false;
+  if (!assumptions && withAi) {
     const cached = DETAIL_CACHE.get(key);
+    if (cached && Date.now() - cached.at < DETAIL_TTL_MS) return cached.data;
+  }
+  if (!assumptions && !withAi) {
+    const cached = CORE_CACHE.get(key);
     if (cached && Date.now() - cached.at < DETAIL_TTL_MS) return cached.data;
   }
 
@@ -700,10 +777,12 @@ export async function buildSymbolIntelligence(
    * analysis prompt looks at the rationale. Run sequentially they cost the sum
    * of two round trips for no reason.
    */
-  const [[withRationale], aiAnalysis] = await Promise.all([
-    enrichHuntRationales([opportunity]),
-    buildAiStockAnalysis(opportunity, expectations),
-  ]);
+  const [[withRationale], aiAnalysis] = withAi
+    ? await Promise.all([
+        enrichHuntRationales([opportunity]),
+        buildAiStockAnalysis(opportunity, expectations),
+      ])
+    : [[opportunity], fallbackAnalysis(opportunity, expectations)];
   const card = withRationale || opportunity;
 
   const baseAssumptions = {
@@ -740,7 +819,8 @@ export async function buildSymbolIntelligence(
   };
 
   if (!assumptions) {
-    DETAIL_CACHE.set(key, { at: Date.now(), data: detail });
+    if (withAi) DETAIL_CACHE.set(key, { at: Date.now(), data: detail });
+  else CORE_CACHE.set(key, { at: Date.now(), data: detail });
   }
   return detail;
 }

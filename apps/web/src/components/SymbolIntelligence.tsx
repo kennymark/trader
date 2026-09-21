@@ -5,7 +5,7 @@ import type {
   ScenarioAssumptions,
   SymbolIntelligenceDetail,
 } from "@trader/shared";
-import { fetchSymbolIntelligence, simulateScenarios } from "../lib/queries";
+import { fetchSymbolAnalysis, fetchSymbolIntelligence, simulateScenarios } from "../lib/queries";
 
 function fmtPct(n: number | null | undefined, digits = 1) {
   if (n == null || Number.isNaN(n)) return "—";
@@ -111,6 +111,17 @@ export function SymbolIntelligence({ symbol }: Props) {
     staleTime: 5 * 60_000,
   });
 
+  /**
+   * Issued at the same moment as the numbers, not after them. Until it lands
+   * the card shows the rule-based read the first response already carried, so
+   * there is no hole and nothing moves when the model's answer replaces it.
+   */
+  const analysis = useQuery({
+    queryKey: ["symbol-analysis", symbol],
+    queryFn: () => fetchSymbolAnalysis(symbol),
+    staleTime: 5 * 60_000,
+  });
+
   const [assumptions, setAssumptions] = useState<ScenarioAssumptions | null>(null);
   const [showAssumptions, setShowAssumptions] = useState(false);
   const [section, setSection] = useState<"overview" | "analysis" | "more">("overview");
@@ -134,10 +145,11 @@ export function SymbolIntelligence({ symbol }: Props) {
   if (!detail.data) return null;
 
   const d: SymbolIntelligenceDetail = detail.data;
+  const ai = analysis.data ?? d.aiAnalysis;
   const o = d.opportunity;
   const bands = scenarioMut.data?.bands || d.scenarios.bands;
   const a = assumptions || d.scenarios.baseAssumptions;
-  const verdictLabel = VERDICT_LABEL[d.aiAnalysis.verdict] || d.aiAnalysis.verdict;
+  const verdictLabel = VERDICT_LABEL[ai.verdict] || ai.verdict;
   const scoreLabel =
     o.opportunityScore >= 80
       ? "Strong Opportunity"
@@ -267,37 +279,43 @@ export function SymbolIntelligence({ symbol }: Props) {
           <div className="symbol-intel-card-head">
             <h3>AI Analyst</h3>
             <span className="muted">
-              {d.aiAnalysis.aiGenerated ? "DeepSeek" : "Rule-based"}
+              {/* Say which read is on screen, including while the model's is
+                  still coming, so the prose is never silently provisional. */}
+              {analysis.isPending && !analysis.isError
+                ? "Rule-based · asking DeepSeek…"
+                : ai.aiGenerated
+                  ? "DeepSeek"
+                  : "Rule-based"}
             </span>
           </div>
           <div className="ai-layout">
             <div className="ai-grid">
               <div className="ai-cell">
                 <div className="ai-cell-label">Bull case</div>
-                <p>{d.aiAnalysis.bullCase}</p>
+                <p>{ai.bullCase}</p>
               </div>
               <div className="ai-cell">
                 <div className="ai-cell-label">Bear case</div>
-                <p>{d.aiAnalysis.bearCase}</p>
+                <p>{ai.bearCase}</p>
               </div>
               <div className="ai-cell">
                 <div className="ai-cell-label">Catalysts</div>
                 <p>
-                  {d.aiAnalysis.catalysts.length
-                    ? d.aiAnalysis.catalysts.join(" · ")
+                  {ai.catalysts.length
+                    ? ai.catalysts.join(" · ")
                     : "No clear near-term catalysts surfaced."}
                 </p>
               </div>
               <div className="ai-cell">
                 <div className="ai-cell-label">Key risks</div>
                 <p>
-                  {d.aiAnalysis.keyRisks.length
-                    ? d.aiAnalysis.keyRisks.join(" · ")
+                  {ai.keyRisks.length
+                    ? ai.keyRisks.join(" · ")
                     : "Standard equity / execution risk."}
                 </p>
               </div>
             </div>
-            <aside className={`ai-verdict ai-verdict-${d.aiAnalysis.verdict}`}>
+            <aside className={`ai-verdict ai-verdict-${ai.verdict}`}>
               <div className="stat-label">Verdict</div>
               <div className="ai-verdict-title">{verdictLabel}</div>
               <div className="ai-confidence">
@@ -312,12 +330,12 @@ export function SymbolIntelligence({ symbol }: Props) {
                   <span>{Math.round(o.confidence * 100)}%</span>
                 </div>
               </div>
-              <p className="muted ai-verdict-market">{d.aiAnalysis.whatMarketExpects}</p>
+              <p className="muted ai-verdict-market">{ai.whatMarketExpects}</p>
             </aside>
           </div>
-          {d.aiAnalysis.citedFacts.length ? (
+          {ai.citedFacts.length ? (
             <div className="symbol-intel-cites muted">
-              Cited: {d.aiAnalysis.citedFacts.slice(0, 4).join("; ")}
+              Cited: {ai.citedFacts.slice(0, 4).join("; ")}
             </div>
           ) : null}
         </section>
