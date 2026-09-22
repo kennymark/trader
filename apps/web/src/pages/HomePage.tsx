@@ -26,6 +26,7 @@ export function HomePage() {
   const [selected, setSelected] = useState<string | null>(() => readSelectedSymbol());
   const [tab, setTab] = useState<Tab>(prefs.defaultWorkTab);
   const [touched, setTouched] = useState(false);
+  const [mobilePane, setMobilePane] = useState<"list" | "detail">("list");
 
   // Same as the chart range: honour the stored tab until the reader picks one.
   useEffect(() => {
@@ -33,13 +34,23 @@ export function HomePage() {
   }, [loaded, prefs.defaultWorkTab, touched]);
 
   // The navbar search selects a symbol from outside this page.
-  useEffect(() => subscribeSelectedSymbol((next) => setSelected(next)), []);
+  useEffect(
+    () =>
+      subscribeSelectedSymbol((next) => {
+        setSelected(next);
+        if (next) setMobilePane("detail");
+      }),
+    [],
+  );
 
   function handleSelect(symbol: string) {
     const next = symbol || null;
     setSelected(next);
     writeSelectedSymbol(next);
-    if (next) setTab((t) => (t === "chart" || t === "intelligence" ? t : "chart"));
+    if (next) {
+      setTab((t) => (t === "chart" || t === "intelligence" ? t : "chart"));
+      setMobilePane("detail");
+    }
   }
 
   /**
@@ -56,7 +67,29 @@ export function HomePage() {
   }, []);
 
   return (
-    <div className="two-pane">
+    <div className={`two-pane mobile-view-${mobilePane}`}>
+      <div className="mobile-work-switcher" role="tablist" aria-label="Watchlist view">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mobilePane === "list"}
+          className={mobilePane === "list" ? "active" : ""}
+          onClick={() => setMobilePane("list")}
+        >
+          Watchlist
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mobilePane === "detail"}
+          className={mobilePane === "detail" ? "active" : ""}
+          disabled={!selected}
+          onClick={() => setMobilePane("detail")}
+        >
+          {selected || "Stock details"}
+        </button>
+      </div>
+
       <WatchlistPane
         selectedSymbol={selected}
         onSelect={handleSelect}

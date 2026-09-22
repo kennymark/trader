@@ -30,6 +30,50 @@ const NAV = [
   },
 ] as const;
 
+function NavIcon({ route }: { route: (typeof NAV)[number]["to"] }) {
+  const common = {
+    width: 22,
+    height: 22,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.8,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+  };
+
+  if (route === "/") {
+    return (
+      <svg {...common}>
+        <path d="M4 18V9m5 9V5m5 13v-6m5 6V3" />
+      </svg>
+    );
+  }
+  if (route === "/calendar") {
+    return (
+      <svg {...common}>
+        <path d="M6 3v3m12-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z" />
+        <path d="M8 13h3m2 0h3m-8 4h3" />
+      </svg>
+    );
+  }
+  if (route === "/portfolio") {
+    return (
+      <svg {...common}>
+        <path d="M4 7h16v12H4zM8 7V5h8v2" />
+        <path d="M4 11h16m-9 3h2" />
+      </svg>
+    );
+  }
+  return (
+    <svg {...common}>
+      <path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1m-8.6 8.6-2.1 2.1" />
+      <circle cx="12" cy="12" r="3.5" />
+    </svg>
+  );
+}
+
 export function AppShell({ user, children }: Props) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
@@ -47,9 +91,10 @@ export function AppShell({ user, children }: Props) {
               key={item.to}
               to={item.to}
               className={item.match(pathname) ? "active" : ""}
+              aria-current={item.match(pathname) ? "page" : undefined}
             >
-              <span className="sidebar-dot" aria-hidden />
-              {item.label}
+              <NavIcon route={item.to} />
+              <span>{item.label}</span>
             </Link>
           ))}
         </nav>
@@ -88,6 +133,9 @@ export function AppShell({ user, children }: Props) {
 
       <div className="app-main">
         <header className="app-topbar">
+          <Link to="/" className="mobile-brand" aria-label="Trader home">
+            <img className="brand-mark" src="/favicon.svg" alt="" />
+          </Link>
           <SymbolSearch />
           <NotificationBell />
         </header>

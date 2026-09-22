@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "apps/web/src/styles.css"
+        ],
+        "createdAt": "2026-09-22T14:06:29.303Z",
+        "reason": "DESIGN.md requires a 4px ink rule to mark the selected row; this encodes active state rather than decorating a card."
+      }
+    ]
+  }
+}
