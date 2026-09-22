@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://trader-eight-iota.vercel.app/sitemap.xml
